@@ -1,7 +1,6 @@
 "use client";
 
 import { Chessboard } from "react-chessboard";
-import { useMemo } from "react";
 
 const pieces = [
   "wP",
@@ -34,7 +33,7 @@ pieces.forEach((piece) => {
 
 export default function ChessBoard({ game }) {
   return (
-    <div>
+    <div className="h-full aspect-square">
       <Chessboard
         id="StyledBoard"
         boardOrientation="black"
