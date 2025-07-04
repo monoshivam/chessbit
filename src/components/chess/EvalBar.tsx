@@ -13,7 +13,7 @@ export default function EvalBar({ eval: evaluation }) {
           style={{ height: `${whitePercent}%` }}
         />
         <div
-          className="bg-black transition-all duration-300"
+          className="bg-stone-800 transition-all duration-300"
           style={{ height: `${100 - whitePercent}%` }}
         />
       </div>
