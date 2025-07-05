@@ -1,12 +1,15 @@
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Chess } from "chess.js";
 
 export default function PGNImport({
   pgn,
   setPgn,
+  loadPGN,
 }: {
   pgn: string;
   setPgn: (pgn: string) => void;
+  loadPGN: (pgn: string, game: Chess) => Promise<void>;
 }) {
   const isDisabled = pgn.trim() === "";
   return (
@@ -26,6 +29,7 @@ export default function PGNImport({
               ? "opacity-50 cursor-not-allowed bg-lime-500 font-bold"
               : "bg-lime-500 font-bold hover:bg-lime-400"
           }
+          onClick={() => loadPGN(pgn, new Chess())}
         >
           Analyze
         </Button>

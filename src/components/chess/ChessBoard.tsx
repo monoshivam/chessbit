@@ -49,6 +49,7 @@ export default function ChessBoard({ game }) {
           backgroundColor: "#edeed1",
         }}
         customPieces={customPieces}
+        animationDuration={100}
       />
     </div>
   );
