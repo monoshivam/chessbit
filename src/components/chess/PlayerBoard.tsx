@@ -1,31 +1,27 @@
 import { Card, CardContent } from "../ui/card";
 
-export default function PlayerBoard({
-  p1name,
-  p2name,
-  p1elo,
-  p2elo,
-}: {
-  p1name: string;
-  p2name: string;
-  p1elo: number;
-  p2elo: number;
-}) {
+export default function PlayerBoard({ playerInfo }) {
   return (
     <div className="select-none font-bold">
-      <Card className="w-full p-0 ">
-        <CardContent className="grid grid-cols-[3fr_1.5fr] grid-rows-2 h-full w-full p-0">
-          <div className="flex items-center justify-center border border-l-0 border-t-0 p-3 mt-2 ml-2">
-            <div className="pb-1">{p1name}</div>
+      <Card className="grid grid-rows-2 w-full p-2 gap-2.5">
+        <CardContent className="grid grid-cols-[3fr_1.5fr] h-full w-full bg-neutral-7=800 rounded-2xl p-2 transition-all duration-300">
+          <div className="flex items-center justify-center border-neutral-60000 border-r-3">
+            <div className="pb-1 font-bold ml-2">{playerInfo.black}</div>
           </div>
-          <div className="flex items-center justify-center border border-r-0 border-t-0 p-3 mt-2 mr-2 ">
-            <div className="pb-1">{p1elo}</div>
+          <div className="flex items-center justify-center ">
+            <div className="pb-1 font-bold">{playerInfo.blackElo}</div>
           </div>
-          <div className="flex items-center justify-center border border-l-0 border-b-0 mb-2 ml-2">
-            <div className="pt-1">{p2name}</div>
+        </CardContent>
+        <CardContent className="grid grid-cols-[3fr_1.5fr] h-full w-full p-2 bg-white rounded-2xl transition-all duration-300">
+          <div className="flex items-center justify-center border-neutral-600 border-r-3">
+            <div className="pt-1 text-black font-bold ml-2">
+              {playerInfo.white}
+            </div>
           </div>
-          <div className="flex items-center justify-center border border-r-0 border-b-0 mb-2 mr-2">
-            <div className="pt-1">{p2elo}</div>
+          <div className="flex items-center justify-center">
+            <div className="pt-1 text-black font-bold">
+              {playerInfo.whiteElo}
+            </div>
           </div>
         </CardContent>
       </Card>

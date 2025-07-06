@@ -31,12 +31,17 @@ pieces.forEach((piece) => {
   );
 });
 
-export default function ChessBoard({ game }) {
+export default function ChessBoard({
+  game,
+  bestMove,
+  customSquareStyles,
+  boardOrientation,
+}) {
   return (
     <div className="h-full aspect-square">
       <Chessboard
         id="StyledBoard"
-        boardOrientation="black"
+        boardOrientation={boardOrientation}
         position={game.fen()}
         customBoardStyle={{
           borderRadius: "4px",
@@ -50,6 +55,20 @@ export default function ChessBoard({ game }) {
         }}
         customPieces={customPieces}
         animationDuration={100}
+        areArrowsAllowed={true}
+        customArrows={
+          bestMove
+            ? [
+                [
+                  bestMove.substring(0, 2),
+                  bestMove.substring(2, 4),
+                  // "rgb(250 174 5)",
+                  "rgb(168 224 47)",
+                ],
+              ]
+            : [[]]
+        }
+        customSquareStyles={customSquareStyles}
       />
     </div>
   );

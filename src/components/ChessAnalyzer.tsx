@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Chess } from "chess.js";
 import ChessBoard from "@/components/chess/ChessBoard";
 import EvalBar from "./chess/EvalBar";
@@ -8,49 +8,32 @@ import PlayerBoard from "@/components/chess/PlayerBoard";
 import BotChat from "./chess/BotChat";
 
 import {
-  Upload,
   Play,
   Pause,
-  SkipForward,
-  SkipBack,
   ChevronLeft,
   ChevronRight,
   ChevronLast,
   ChevronFirst,
-  BarChart3,
-  MessageSquare,
-  Settings,
-  Book,
-  Database,
-  Zap,
-  Target,
-  TrendingUp,
-  Clock,
-  Star,
-  Send,
-  Divide,
+  RefreshCcw,
 } from "lucide-react";
 
 import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
-import { TemplateContext } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import { log } from "node:console";
 
 const ChessAnalyzer = () => {
   const [game, setGame] = useState(new Chess());
-  const [evalBar, setEvalBar] = useState(0);
   const [pgn, setPgn] = useState("");
-  const [p1name, setP1Name] = useState("zayoo");
-  const [p2name, setP2Name] = useState("magnus");
-  const [p1elo, setP1Elo] = useState(2700);
-  const [p2elo, setP2Elo] = useState(2604);
+  const [playerInfo, setPlayerInfo] = useState({});
   const [currentMoveIndex, setCurrentMoveIndex] = useState(-2);
+  const [lastMadeMove, setLastMadeMove] = useState<object>({});
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const isPlayingRef = useRef(false);
   const currentMoveIndexRef = useRef(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [evaluation, setEvaluation] = useState(0);
   const [bestMove, setBestMove] = useState("");
+  const [stockfishData, setStockfishData] = useState<object>({});
+  const [boardOrientation, setBoardOrientation] = useState("white");
   const [chesstychat, setChesstyChat] = useState(
     "click on analyze to start analysing your match!",
   );
@@ -64,14 +47,113 @@ const ChessAnalyzer = () => {
       const hist = game.history({ verbose: true });
       setHistory(hist);
       setCurrentMoveIndex(hist.length - 1);
+      setLastMadeMove(hist[hist.length - 1]);
+      console.log(hist[hist.length - 1]);
       setIsAnalyzing(true);
       setEvaluation(0);
       setBestMove("");
       setChesstyChat("Analyzing...");
+      setPlayerInfo(extractPlayerInfo(pgn));
     } catch (error) {
       console.error("Error loading PGN:", error);
     }
   };
+
+  useEffect(() => {
+    async function fetchData(data = {}) {
+      try {
+        if (currentMoveIndex != history.length - 1) {
+          const response = await fetch("https://chess-api.com/v1", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          });
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const result = await response.json();
+          console.log("📡 Response data:", result);
+
+          setStockfishData(result);
+          setEvaluation(result.eval);
+          setChesstyChat(result.text || "Analysis complete!");
+        } else {
+          setEvaluation(0);
+        }
+
+        let xdata;
+        if (currentMoveIndex >= 0) {
+          const tempChess = new Chess();
+          const moves = history.slice(0, currentMoveIndex);
+          for (const move of moves) {
+            tempChess.move({
+              from: move.from,
+              to: move.to,
+              promotion: move.promotion,
+            });
+          }
+          xdata = { fen: tempChess.fen() };
+        }
+        const responseForMove = await fetch("https://chess-api.com/v1", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(xdata),
+        });
+        const resultForMove = await responseForMove.json();
+        console.log(currentMoveIndex);
+        if (currentMoveIndex == -1) {
+          setBestMove(null);
+        } else {
+          setBestMove(resultForMove.move || "");
+        }
+      } catch (error) {
+        console.error("❌ Fetch error:", error);
+        setChesstyChat("Analysis failed!");
+      } finally {
+        setIsAnalyzing(false);
+      }
+    }
+    fetchData({ fen: game.fen() });
+  }, [game.fen()]);
+
+  const customSquareStyles = useMemo(() => {
+    const styles: Record<string, React.CSSProperties> = {};
+
+    if (lastMadeMove) {
+      styles[lastMadeMove.from] = {
+        backgroundColor: "rgba(255, 255, 0, 0.4)",
+      };
+
+      styles[lastMadeMove.to] = {
+        backgroundColor: "rgba(255, 255, 0, 0.4)",
+      };
+    }
+    if (game.isCheckmate()) {
+      const kingColor = game.turn();
+      const kingSquare = game
+        .board()
+        .flat()
+        .find(
+          (square) =>
+            square && square.type === "k" && square.color === kingColor,
+        )?.square;
+
+      if (kingSquare) {
+        styles[kingSquare] = {
+          backgroundColor: "rgba(255, 0, 0, 0.6)",
+          boxShadow: "inset 0 0 0 3px rgba(255, 0, 0, 0.9)",
+          animation: "pulse 1s infinite",
+        };
+      }
+    }
+
+    return styles;
+  }, [lastMadeMove, game]);
 
   const nextMove = () => {
     if (
@@ -91,6 +173,7 @@ const ChessAnalyzer = () => {
         tempChess.move(mv);
       }
       setGame(tempChess);
+      setLastMadeMove(moves[moves.length - 1]);
     }
   };
 
@@ -107,6 +190,7 @@ const ChessAnalyzer = () => {
         });
       }
       setGame(tempChess);
+      setLastMadeMove(moves[moves.length - 1]);
     }
   };
 
@@ -119,6 +203,7 @@ const ChessAnalyzer = () => {
 
     setCurrentMoveIndex(-1);
     setGame(new Chess());
+    setLastMadeMove(null);
   };
 
   const lastMove = () => {
@@ -133,6 +218,7 @@ const ChessAnalyzer = () => {
     const tempChess = new Chess();
     tempChess.loadPgn(pgn);
     setGame(tempChess);
+    setLastMadeMove(history[history.length - 1]);
   };
 
   const playMove = () => {
@@ -167,7 +253,8 @@ const ChessAnalyzer = () => {
     });
 
     currentMoveIndexRef.current += 1;
-    setGame(new Chess(game.fen()));
+    setGame(game);
+    setLastMadeMove(history[currentMoveIndexRef.current]);
 
     if (currentMoveIndexRef.current < history.length - 1) {
       setTimeout(() => playNextMove(), 1000);
@@ -176,6 +263,24 @@ const ChessAnalyzer = () => {
       setIsPlaying(false);
       setCurrentMoveIndex(currentMoveIndexRef.current);
     }
+  };
+
+  function extractPlayerInfo(pgn: string): PlayerInfo {
+    const getTagValue = (tag: string) => {
+      const match = pgn.match(new RegExp(`\\[${tag} "(.*?)"\\]`));
+      return match ? match[1] : "";
+    };
+
+    return {
+      white: getTagValue("White"),
+      black: getTagValue("Black"),
+      whiteElo: parseInt(getTagValue("WhiteElo"), 10),
+      blackElo: parseInt(getTagValue("BlackElo"), 10),
+    };
+  }
+
+  const rotateBoard = () => {
+    setBoardOrientation(boardOrientation == "white" ? "black" : "white");
   };
 
   const samplePgn = `[Event "Live Chess"]
@@ -202,12 +307,7 @@ const ChessAnalyzer = () => {
       {/* Content */}
       <div className="flex grow items-center justify-around gap-6 p-4">
         <div className="flex flex-col justify-evenly w-full h-full gap-5 max-h-3/4">
-          <PlayerBoard
-            p1name={p1name}
-            p2name={p2name}
-            p1elo={p1elo}
-            p2elo={p2elo}
-          />
+          <PlayerBoard playerInfo={playerInfo} />
           <BotChat chesstychat={chesstychat} />
           <br />
         </div>
@@ -216,15 +316,27 @@ const ChessAnalyzer = () => {
           <Card className="flex p-4 h-full max-h-full">
             <div className="flex-1 grid grid-cols-[auto_1fr] gap-3">
               <div className="select-none">
-                <EvalBar eval={0} />
+                <EvalBar eval={evaluation} orientation={boardOrientation} />
               </div>
               <div className="">
-                <ChessBoard game={game} />
+                <ChessBoard
+                  game={game}
+                  bestMove={bestMove}
+                  customSquareStyles={customSquareStyles}
+                  boardOrientation={boardOrientation}
+                />
               </div>
             </div>
           </Card>
           <div className="flex flex-row justify-center">
             <Card className="flex flex-row justify-center p-1.5 gap-1">
+              <Button
+                className="bg-[#323130] hover:bg-[#474944]"
+                size="lg"
+                onClick={rotateBoard}
+              >
+                <RefreshCcw color="#adadad" />
+              </Button>
               <Button
                 className="bg-[#323130] hover:bg-[#474944]"
                 size="lg"
