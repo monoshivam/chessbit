@@ -1,11 +1,12 @@
 "use client";
+import { analyzePositions } from "@/sf/stockfish17";
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Chess } from "chess.js";
 import ChessBoard from "@/components/chess/ChessBoard";
 import EvalBar from "./chess/EvalBar";
 import PGNImport from "@/components/import/PGNImport";
 import PlayerBoard from "@/components/chess/PlayerBoard";
-import BotChat from "./chess/BotChat";
+import EvalGraph from "./chess/EvalGraph";
 
 import {
   Play,
@@ -19,25 +20,34 @@ import {
 
 import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { Progress } from "./ui/progress";
 
 const ChessAnalyzer = () => {
   const [game, setGame] = useState(new Chess());
   const [pgn, setPgn] = useState("");
-  const [playerInfo, setPlayerInfo] = useState({});
+  const [whitePlayerInfo, setWhitePlayerInfo] = useState({
+    name: "White",
+    elo: "0000",
+  });
+  const [blackPlayerInfo, setBlackPlayerInfo] = useState({
+    name: "Black",
+    elo: "0000",
+  });
   const [currentMoveIndex, setCurrentMoveIndex] = useState(-2);
   const [lastMadeMove, setLastMadeMove] = useState<object>({});
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analyzingState, setAnalyzingState] = useState<number>(1);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
   const isPlayingRef = useRef(false);
   const currentMoveIndexRef = useRef(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [evaluation, setEvaluation] = useState(0);
+  const [mateIn, setMateIn] = useState(0);
   const [bestMove, setBestMove] = useState("");
-  const [stockfishData, setStockfishData] = useState<object>({});
   const [boardOrientation, setBoardOrientation] = useState("white");
-  const [chesstychat, setChesstyChat] = useState(
-    "click on analyze to start analysing your match!",
-  );
-  const [history, setHistory] = useState<any[]>([]);
+  const [history, setHistory] = useState<object[]>([]);
+  const isFirstRender = useRef(true);
+  const analysis = useRef<any[]>([]);
 
   const loadPGN = (pgn: string, game: Chess) => {
     try {
@@ -48,77 +58,104 @@ const ChessAnalyzer = () => {
       setHistory(hist);
       setCurrentMoveIndex(hist.length - 1);
       setLastMadeMove(hist[hist.length - 1]);
-      console.log(hist[hist.length - 1]);
-      setIsAnalyzing(true);
       setEvaluation(0);
       setBestMove("");
-      setChesstyChat("Analyzing...");
-      setPlayerInfo(extractPlayerInfo(pgn));
+      extractPlayerInfo(pgn);
+      console.log(hist);
     } catch (error) {
       console.error("Error loading PGN:", error);
     }
   };
 
   useEffect(() => {
-    async function fetchData(data = {}) {
+    if (isFirstRender.current) {
+      isFirstRender.current = false; // Skip the first run
+      return;
+    }
+    setAnalyzingState(2);
+
+    const runBatchAnalysis = async () => {
       try {
-        if (currentMoveIndex != history.length - 1) {
-          const response = await fetch("https://chess-api.com/v1", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(data),
-          });
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
+        const positions = history.map((move) => move.before);
 
-          const result = await response.json();
-          console.log("📡 Response data:", result);
-
-          setStockfishData(result);
-          setEvaluation(result.eval);
-          setChesstyChat(result.text || "Analysis complete!");
-        } else {
-          setEvaluation(0);
-        }
-
-        let xdata;
-        if (currentMoveIndex >= 0) {
-          const tempChess = new Chess();
-          const moves = history.slice(0, currentMoveIndex);
-          for (const move of moves) {
-            tempChess.move({
-              from: move.from,
-              to: move.to,
-              promotion: move.promotion,
-            });
-          }
-          xdata = { fen: tempChess.fen() };
-        }
-        const responseForMove = await fetch("https://chess-api.com/v1", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
+        const batchResult = await analyzePositions({
+          positions: positions,
+          depth: 12,
+          onProgress: (completed, total, currentResult) => {
+            const progress = (completed / total) * 100;
+            setAnalysisProgress(progress);
+            console.log(
+              `Progress: ${completed}/${total} (${progress.toFixed(1)}%)`,
+            );
           },
-          body: JSON.stringify(xdata),
         });
-        const resultForMove = await responseForMove.json();
-        console.log(currentMoveIndex);
+        if (game.isCheckmate()) {
+          const winner = game.turn() === "w" ? "black" : "white";
+          if (winner == "white") {
+            batchResult.results.push({ eval: 10, mate: 999 });
+          } else {
+            batchResult.results.push({ eval: -10, mate: -999 });
+          }
+        } else if (game.isInsufficientMaterial() || game.isStalemate()) {
+          batchResult.results.push({ eval: 0 });
+        } else {
+          const tfen = history[history.length - 1].after;
+          const tPosition: string[] = [tfen];
+          const bResult = await analyzePositions({
+            positions: tPosition,
+            depth: 12,
+            engineType: "multithread",
+            onProgress: (completed, total, currentResult) => {
+              const progress = (completed / total) * 100;
+              setAnalysisProgress(progress);
+              console.log(
+                `Progress: ${completed}/${total} (${progress.toFixed(1)}%)`,
+              );
+            },
+          });
+          const tEvaluation = bResult.results[0];
+          batchResult.results.push(tEvaluation);
+        }
+
+        analysis.current = batchResult.results;
+        console.log("Batch analysis complete:", analysis.current);
+
+        if (batchResult.completed === positions.length) {
+          setAnalyzingState(3);
+        }
+      } catch (error) {
+        console.error("Batch analysis error:", error);
+      }
+    };
+    runBatchAnalysis();
+  }, [history]);
+
+  useEffect(() => {
+    if (
+      analysis.current.length == history.length + 1 &&
+      analysis.current.length != 0
+    ) {
+      try {
+        if (analysis.current[currentMoveIndex + 1].mate != null) {
+          setMateIn(Number(analysis.current[currentMoveIndex + 1].mate));
+        } else {
+          setMateIn(0);
+          setEvaluation(analysis.current[currentMoveIndex + 1].eval);
+        }
         if (currentMoveIndex == -1) {
           setBestMove(null);
         } else {
-          setBestMove(resultForMove.move || "");
+          const bm = analysis.current[currentMoveIndex].moves.split(" ");
+          setBestMove(bm[0] || "");
         }
       } catch (error) {
         console.error("❌ Fetch error:", error);
-        setChesstyChat("Analysis failed!");
-      } finally {
-        setIsAnalyzing(false);
       }
     }
-    fetchData({ fen: game.fen() });
+    if (currentMoveIndex == -1) {
+      setBestMove(null);
+      setEvaluation(0);
+    }
   }, [game.fen()]);
 
   const customSquareStyles = useMemo(() => {
@@ -146,8 +183,6 @@ const ChessAnalyzer = () => {
       if (kingSquare) {
         styles[kingSquare] = {
           backgroundColor: "rgba(255, 0, 0, 0.6)",
-          boxShadow: "inset 0 0 0 3px rgba(255, 0, 0, 0.9)",
-          animation: "pulse 1s infinite",
         };
       }
     }
@@ -265,18 +300,19 @@ const ChessAnalyzer = () => {
     }
   };
 
-  function extractPlayerInfo(pgn: string): PlayerInfo {
+  function extractPlayerInfo(pgn: string) {
     const getTagValue = (tag: string) => {
       const match = pgn.match(new RegExp(`\\[${tag} "(.*?)"\\]`));
       return match ? match[1] : "";
     };
-
-    return {
-      white: getTagValue("White"),
-      black: getTagValue("Black"),
-      whiteElo: parseInt(getTagValue("WhiteElo"), 10),
-      blackElo: parseInt(getTagValue("BlackElo"), 10),
-    };
+    setWhitePlayerInfo({
+      name: getTagValue("White"),
+      elo: parseInt(getTagValue("WhiteElo"), 10),
+    });
+    setBlackPlayerInfo({
+      name: getTagValue("Black"),
+      elo: parseInt(getTagValue("BlackElo"), 10),
+    });
   }
 
   const rotateBoard = () => {
@@ -293,96 +329,133 @@ const ChessAnalyzer = () => {
                       [WhiteElo "1800"]
                       [BlackElo "1750"]
 
-                      1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 d6 8. c3 O-O 9. h3 Nb8 10. d4 Nbd7 1-0`;
+                      1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 d6 8. c3 O-O 9. h3 Nb8 10. d4 Nbd7 11. h4 1-0`;
+  // useEffect(() => {
+  //   loadPGN(samplePgn, new Chess());
+  // }, []);
 
   return (
-    <div className="flex flex-col justify-start h-screen">
-      {/* Header */}
-      <Card className="flex flex-shrink-0 items-center p-4 m-3">
+    <div className="">
+      <Card className="h-16 items-center p-4 m-3">
         <CardContent>
           <label className="text-2xl font-bold">chessty</label>
         </CardContent>
       </Card>
-
-      {/* Content */}
-      <div className="flex grow items-center justify-around gap-6 p-4">
-        <div className="flex flex-col justify-evenly w-full h-full gap-5 max-h-3/4">
-          <PlayerBoard playerInfo={playerInfo} />
-          <BotChat chesstychat={chesstychat} />
-          <br />
-        </div>
-
-        <div className="flex flex-col grow h-full max-h-4/5 gap-4">
-          <Card className="flex p-4 h-full max-h-full">
-            <div className="flex-1 grid grid-cols-[auto_1fr] gap-3">
-              <div className="select-none">
-                <EvalBar eval={evaluation} orientation={boardOrientation} />
-              </div>
-              <div className="">
-                <ChessBoard
-                  game={game}
-                  bestMove={bestMove}
-                  customSquareStyles={customSquareStyles}
-                  boardOrientation={boardOrientation}
-                />
-              </div>
+      <div className="flex flex-col lg:flex-row gap-10 lg:min-h-[calc(100vh-8rem)]">
+        <div className="hidden lg:block w-[calc(3vw)] rounded-xs"></div>
+        <div className="m-1 lg:m-3">
+          <div className="hidden lg:block h-[calc(5vh)] rounded-xs"></div>
+          <div className="ml-9 mb-1.5 lg:mb-2.5">
+            <PlayerBoard playerInfo={blackPlayerInfo} />
+          </div>
+          <Card
+            id="chessBoard"
+            className="lg:flex-1 grid grid-cols-[auto_1fr] gap-2 p-2 rounded-sm place-content-center"
+          >
+            <EvalBar
+              eval={evaluation}
+              mateIn={mateIn}
+              orientation={boardOrientation}
+            />
+            <div className="lg:min-h-[calc(100vh-24rem-10px)] max-h-[calc(100vh-18rem-8px)] aspect-square">
+              <ChessBoard
+                game={game}
+                bestMove={bestMove}
+                customSquareStyles={customSquareStyles}
+                boardOrientation={boardOrientation}
+              />
             </div>
           </Card>
-          <div className="flex flex-row justify-center">
-            <Card className="flex flex-row justify-center p-1.5 gap-1">
-              <Button
-                className="bg-[#323130] hover:bg-[#474944]"
-                size="lg"
-                onClick={rotateBoard}
-              >
-                <RefreshCcw color="#adadad" />
-              </Button>
-              <Button
-                className="bg-[#323130] hover:bg-[#474944]"
-                size="lg"
-                onClick={firstMove}
-              >
-                <ChevronFirst color="#adadad" />
-              </Button>
-              <Button
-                className="bg-[#323130] hover:bg-[#474944]"
-                size="lg"
-                onClick={previousMove}
-              >
-                <ChevronLeft color="#adadad" />
-              </Button>
-              <Button
-                className="bg-[#323130] hover:bg-[#474944]"
-                size="lg"
-                onClick={playMove}
-              >
-                {isPlayingRef.current ? (
-                  <Pause fill="#adadad" strokeWidth={0} />
-                ) : (
-                  <Play fill="#adadad" strokeWidth={0} />
-                )}
-              </Button>
-              <Button
-                className="bg-[#323130] hover:bg-[#474944]"
-                size="lg"
-                onClick={nextMove}
-              >
-                <ChevronRight color="#adadad" />
-              </Button>
-              <Button
-                className="bg-[#323130] hover:bg-[#474944]"
-                size="lg"
-                onClick={lastMove}
-              >
-                <ChevronLast color="#adadad" />
-              </Button>
-            </Card>
+          <div className="ml-9 mt-1.5 lg:mb-2.5">
+            <PlayerBoard playerInfo={whitePlayerInfo} />
           </div>
         </div>
+        <div className="hidden lg:block w-[2px] bg-neutral-500 rounded-xs"></div>
+        <div className="flex-1 relative lg:m-3 ">
+          {analyzingState == 1 ? (
+            <Tabs
+              className="items-center w-full h-[calc(100%-3rem)]"
+              defaultValue="pgn"
+            >
+              <TabsList>
+                <TabsTrigger value="pgn">From PGN</TabsTrigger>
+                <TabsTrigger value="chesscom">chess.com</TabsTrigger>
+              </TabsList>
+              <TabsContent value="pgn" className="w-full p-3 h-full">
+                <PGNImport pgn={pgn} setPgn={setPgn} loadPGN={loadPGN} />
+              </TabsContent>
+              <TabsContent value="chesscom"></TabsContent>
+            </Tabs>
+          ) : undefined}
+          {analyzingState == 2 ? (
+            <div className="w-full h-full flex lg:justify-center flex-col items-center">
+              <label className="mb-2 font-bold text-neutral-200">
+                Analyzing...
+              </label>
+              <Progress
+                value={analysisProgress}
+                className="w-[90%] h-6 rounded-md transition-all"
+              />
+            </div>
+          ) : undefined}
+          {analyzingState == 3 ? (
+            <div className="flex flex-col gap-2">
+              <Card className="items-center p-1.5 m-3 mb-0 rounded-md">
+                <CardContent>
+                  <label className="text-sm font-bold">Game Review</label>
+                </CardContent>
+              </Card>
+              <div className="h-20 bg-[#403d39] m-3 mt-0 rounded-sm overflow-hidden">
+                <EvalGraph analysisData={analysis.current} />
+              </div>
+              <Card className="w-full"></Card>
+            </div>
+          ) : undefined}
 
-        <div className="w-full gap-2 h-full max-h-2/4">
-          <PGNImport pgn={pgn} setPgn={setPgn} loadPGN={loadPGN} />
+          <div id="spacer" className="h-16 lg:h-0"></div>
+          <Card className="flex flex-row p-1.5 gap-1 fixed bottom-0 w-full rounded-b-none lg:absolute lg:rounded-sm">
+            <Button
+              className="bg-[#323130] hover:bg-[#474944] flex-1"
+              size="lg"
+              onClick={firstMove}
+            >
+              <ChevronFirst color="#adadad" />
+            </Button>
+            <Button
+              className="bg-[#323130] hover:bg-[#474944] flex-1"
+              size="lg"
+              onClick={previousMove}
+            >
+              <ChevronLeft color="#adadad" />
+            </Button>
+            <Button
+              className="bg-[#323130] hover:bg-[#474944] flex-1"
+              size="lg"
+              onClick={playMove}
+            >
+              {isPlayingRef.current ? (
+                <Pause fill="#adadad" strokeWidth={0} />
+              ) : (
+                <Play fill="#adadad" strokeWidth={0} />
+              )}
+            </Button>
+            <Button
+              className="bg-[#323130] hover:bg-[#474944] flex-1"
+              size="lg"
+              onClick={nextMove}
+            >
+              <ChevronRight color="#adadad" />
+            </Button>
+            <Button
+              className="bg-[#323130] hover:bg-[#474944] flex-1"
+              size="lg"
+              onClick={lastMove}
+            >
+              <ChevronLast color="#adadad" />
+            </Button>
+          </Card>
         </div>
+        <div className="hidden lg:block w-[calc(3vw)] rounded-xs"></div>
       </div>
     </div>
   );
