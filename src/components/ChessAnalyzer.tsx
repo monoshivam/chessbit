@@ -89,6 +89,13 @@ const ChessAnalyzer = () => {
             );
           },
         });
+        batchResult.results.forEach((obj, index) => {
+          if (index % 2 == 1) {
+            obj.eval = -obj.eval;
+            obj.winChance = 100 - obj.winChance;
+          }
+        });
+
         if (game.isCheckmate()) {
           const winner = game.turn() === "w" ? "black" : "white";
           if (winner == "white") {
@@ -103,8 +110,7 @@ const ChessAnalyzer = () => {
           const tPosition: string[] = [tfen];
           const bResult = await analyzePositions({
             positions: tPosition,
-            depth: 12,
-            engineType: "multithread",
+            depth: 20,
             onProgress: (completed, total, currentResult) => {
               const progress = (completed / total) * 100;
               setAnalysisProgress(progress);
@@ -366,7 +372,7 @@ const ChessAnalyzer = () => {
               />
             </div>
           </Card>
-          <div className="ml-9 mt-1.5 lg:mb-2.5">
+          <div className="ml-9 mt-1.5 lg:mt-2.5">
             <PlayerBoard playerInfo={whitePlayerInfo} />
           </div>
         </div>
