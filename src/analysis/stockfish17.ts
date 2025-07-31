@@ -3,11 +3,7 @@ type AnalysisOptions = {
   variants?: number;
   threads?: number;
   depth?: number;
-  onProgress?: (
-    completed: number,
-    total: number,
-    currentResult: AnalysisResult,
-  ) => void;
+  onProgress?: (completed: number, total: number) => void;
 };
 type AnalysisResult = {
   eval: number;
@@ -45,7 +41,7 @@ const analyzePosition = async (
 
     worker.onmessage = (e) => {
       const message = e.data;
-      console.log(message);
+      // console.log(message);
 
       if (message.data.startsWith("info depth")) {
         const cpMatch = message.data.match(/cp (-?\d+)/);
@@ -56,9 +52,9 @@ const analyzePosition = async (
         const moves = pvMatch ? pvMatch[1].split(" ") : [];
 
         result.continuationArr[parseInt(multipvMatch[1]) - 1] = moves;
-        console.log(pvMatch);
-        console.log(moves);
-        console.log(result.continuationArr);
+        // console.log(pvMatch);
+        // console.log(moves);
+        // console.log(result.continuationArr);
 
         if (parseInt(multipvMatch[1]) === 1) {
           if (cpMatch) {
@@ -77,6 +73,16 @@ const analyzePosition = async (
           .join(" ");
         if (centipawns !== null) {
           result.winChance = calculateWinChance(centipawns);
+        } else {
+          let winMate = null;
+          if (mateMatch) {
+            winMate = parseInt(mateMatch[1]);
+          }
+          if (winMate && winMate > 0) {
+            result.winChance = 100;
+          } else if (winMate && winMate < 0) {
+            result.winChance = 0;
+          }
         }
       }
       if (message.data.startsWith(`info depth ${depth}`)) {
@@ -99,7 +105,7 @@ const initializeWorker = async (
   return new Promise((resolve, reject) => {
     worker.onmessage = (e) => {
       const message = e.data;
-      console.log(message);
+      // console.log(message);
 
       if (message.type === "ready") {
         console.log("Engine Loaded");
@@ -157,7 +163,7 @@ export const analyzePositions = async (
       completed++;
 
       if (onProgress) {
-        onProgress(completed, total, result);
+        onProgress(completed, total);
       }
     }
     return {
@@ -178,6 +184,7 @@ export const analyzePositions = async (
 };
 
 const calculateWinChance = (centipawns: number): number => {
-  const winChance = 100 / (1 + Math.exp(-0.00368208 * centipawns));
+  const cp = Math.min(Math.max(-1000, centipawns), 1000);
+  const winChance = 100 / (1 + Math.exp(-0.00368208 * cp));
   return winChance;
 };

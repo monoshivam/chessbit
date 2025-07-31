@@ -1,4 +1,6 @@
-export default function PlayerBoard({ playerInfo }) {
+import React from "react";
+
+function PlayerBoard({ playerInfo }) {
   return (
     <div className="grid grid-cols-[auto_1fr] gap-1.5 lg:gap-2.5">
       <img
@@ -17,3 +19,5 @@ export default function PlayerBoard({ playerInfo }) {
     </div>
   );
 }
+
+export default React.memo(PlayerBoard);

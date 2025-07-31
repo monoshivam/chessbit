@@ -28,7 +28,7 @@ export default function PGNImport({
             ? "opacity-50 cursor-not-allowed bg-lime-500 font-bold"
             : "bg-lime-500 font-bold hover:bg-lime-400"
         }
-        onClick={() => loadPGN(pgn, new Chess())}
+        onClick={() => loadPGN(pgn)}
       >
         Analyze
       </Button>

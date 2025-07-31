@@ -27,7 +27,7 @@ pieces.forEach((piece) => {
 });
 
 export default function ChessBoard({
-  game,
+  fen,
   bestMove,
   customSquareStyles,
   boardOrientation,
@@ -35,7 +35,7 @@ export default function ChessBoard({
   const chessboardOptions = {
     pieces: customPieces,
     boardOrientation: boardOrientation,
-    position: game.fen(),
+    position: fen,
     boardStyle: {
       borderRadius: "4px",
       boxShadow: "0 2px 10px rgba(0, 0, 0, 0.5)",

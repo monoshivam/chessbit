@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { AreaChart, Area, ResponsiveContainer, ReferenceLine } from "recharts";
 
 const temp = [
@@ -29,7 +30,7 @@ const temp = [
   },
 ];
 
-export default function EvalGraph({ analysisData }) {
+function EvalGraph({ analysisData }) {
   console.log(analysisData);
   const processedData = analysisData.map((item) => {
     if (Number(item.mate) < 0) {
@@ -68,3 +69,5 @@ export default function EvalGraph({ analysisData }) {
     </ResponsiveContainer>
   );
 }
+
+export default React.memo(EvalGraph);

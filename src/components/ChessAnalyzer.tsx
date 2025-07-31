@@ -1,12 +1,20 @@
 "use client";
-import { analyzePositions } from "@/sf/stockfish17";
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import { analyzePositions } from "@/analysis/stockfish17";
+import { verdict } from "@/analysis/moves";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  useCallback,
+} from "react";
 import { Chess } from "chess.js";
 import ChessBoard from "@/components/chess/ChessBoard";
 import EvalBar from "./chess/EvalBar";
 import PGNImport from "@/components/import/PGNImport";
 import PlayerBoard from "@/components/chess/PlayerBoard";
 import EvalGraph from "./chess/EvalGraph";
+import MoveBox from "./chess/MoveBox";
 
 import {
   Play,
@@ -24,7 +32,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Progress } from "./ui/progress";
 
 const ChessAnalyzer = () => {
-  const [game, setGame] = useState(new Chess());
+  const gameRef = useRef(new Chess());
+  const [fen, setFen] = useState(gameRef.current.fen());
+
   const [pgn, setPgn] = useState("");
   const [whitePlayerInfo, setWhitePlayerInfo] = useState({
     name: "White",
@@ -37,10 +47,8 @@ const ChessAnalyzer = () => {
   const [currentMoveIndex, setCurrentMoveIndex] = useState(-2);
   const [lastMadeMove, setLastMadeMove] = useState<object>({});
   const [analyzingState, setAnalyzingState] = useState<number>(1);
-  const [analysisProgress, setAnalysisProgress] = useState(0);
   const isPlayingRef = useRef(false);
   const currentMoveIndexRef = useRef(0);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [evaluation, setEvaluation] = useState(0);
   const [mateIn, setMateIn] = useState(0);
   const [bestMove, setBestMove] = useState("");
@@ -48,13 +56,45 @@ const ChessAnalyzer = () => {
   const [history, setHistory] = useState<object[]>([]);
   const isFirstRender = useRef(true);
   const analysis = useRef<any[]>([]);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const verdicts = useRef<string[]>([]);
 
-  const loadPGN = (pgn: string, game: Chess) => {
+  const playSound = useCallback(() => {
+    let soundType = "move";
+    console.log("fewfwefew", lastMadeMove);
+    if (lastMadeMove == null) {
+      soundType = "game-start";
+    } else if (
+      gameRef.current.isCheckmate() ||
+      gameRef.current.isDraw() ||
+      gameRef.current.isStalemate()
+    ) {
+      soundType = "game-end";
+    } else if (gameRef.current.isCheck()) {
+      soundType = "check";
+    } else {
+      if (lastMadeMove.flags.includes("c")) {
+        soundType = "capture";
+      } else if (
+        lastMadeMove.flags.includes("k") ||
+        lastMadeMove.flags.includes("q")
+      ) {
+        soundType = "castle";
+      } else if (lastMadeMove.flags.includes("p")) {
+        soundType = "promote";
+      }
+    }
+
+    const sound = new Audio(`/sounds/${soundType}.mp3`);
+    sound.play().catch(console.error);
+  }, [lastMadeMove]);
+
+  const loadPGN = useCallback((pgn: string) => {
     try {
-      game.loadPgn(pgn);
+      gameRef.current.loadPgn(pgn);
       setPgn(pgn);
-      setGame(game);
-      const hist = game.history({ verbose: true });
+      setFen(gameRef.current.fen());
+      const hist = gameRef.current.history({ verbose: true });
       setHistory(hist);
       setCurrentMoveIndex(hist.length - 1);
       setLastMadeMove(hist[hist.length - 1]);
@@ -65,7 +105,7 @@ const ChessAnalyzer = () => {
     } catch (error) {
       console.error("Error loading PGN:", error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (isFirstRender.current) {
@@ -81,7 +121,7 @@ const ChessAnalyzer = () => {
         const batchResult = await analyzePositions({
           positions: positions,
           depth: 12,
-          onProgress: (completed, total, currentResult) => {
+          onProgress: (completed, total) => {
             const progress = (completed / total) * 100;
             setAnalysisProgress(progress);
             console.log(
@@ -90,20 +130,27 @@ const ChessAnalyzer = () => {
           },
         });
         batchResult.results.forEach((obj, index) => {
-          if (index % 2 == 1) {
+          if (index % 2 == 1 && obj.mate == null) {
             obj.eval = -obj.eval;
             obj.winChance = 100 - obj.winChance;
+            obj.centipawns = -obj.centipawns;
           }
         });
+        batchResult.results[0].eval = 0;
+        batchResult.results[0].winChance = 50;
+        batchResult.results[0].centipawns = 0;
 
-        if (game.isCheckmate()) {
-          const winner = game.turn() === "w" ? "black" : "white";
+        if (gameRef.current.isCheckmate()) {
+          const winner = gameRef.current.turn() === "w" ? "black" : "white";
           if (winner == "white") {
-            batchResult.results.push({ eval: 10, mate: 999 });
+            batchResult.results.push({ eval: 10, mate: 999, winChance: 100 });
           } else {
-            batchResult.results.push({ eval: -10, mate: -999 });
+            batchResult.results.push({ eval: -10, mate: -999, winChance: 0 });
           }
-        } else if (game.isInsufficientMaterial() || game.isStalemate()) {
+        } else if (
+          gameRef.current.isInsufficientMaterial() ||
+          gameRef.current.isStalemate()
+        ) {
           batchResult.results.push({ eval: 0 });
         } else {
           const tfen = history[history.length - 1].after;
@@ -124,7 +171,23 @@ const ChessAnalyzer = () => {
         }
 
         analysis.current = batchResult.results;
+
+        for (let i = 1; i < batchResult.results.length; i++) {
+          const turn: string = i % 2 === 0 ? "w" : "b";
+          const bMove: string = analysis.current[i - 1].moves.split(" ")[0];
+          const moveMade: string = history[i - 1].from + history[i - 1].to;
+          if (bMove == moveMade) {
+            verdicts.current.push("bestmove");
+            continue;
+          }
+
+          verdicts.current.push(
+            verdict(turn, batchResult.results[i], batchResult.results[i - 1]),
+          );
+        }
+
         console.log("Batch analysis complete:", analysis.current);
+        console.log("Verdicts: ", verdicts.current);
 
         if (batchResult.completed === positions.length) {
           setAnalyzingState(3);
@@ -142,6 +205,8 @@ const ChessAnalyzer = () => {
       analysis.current.length != 0
     ) {
       try {
+        playSound();
+
         if (analysis.current[currentMoveIndex + 1].mate != null) {
           setMateIn(Number(analysis.current[currentMoveIndex + 1].mate));
         } else {
@@ -162,23 +227,51 @@ const ChessAnalyzer = () => {
       setBestMove(null);
       setEvaluation(0);
     }
-  }, [game.fen()]);
+  }, [fen]);
 
   const customSquareStyles = useMemo(() => {
     const styles: Record<string, React.CSSProperties> = {};
+    const moveType = verdicts.current[currentMoveIndex];
 
-    if (lastMadeMove) {
+    let backColor: string;
+    if (moveType == "bestmove") backColor = "rgba(166, 230, 101, 0.47)";
+    else if (moveType == "goodmove") backColor = "rgba(166, 230, 101, 0.47)";
+    else if (moveType == "inaccuracy") backColor = "rgba(59, 157, 247, 0.3)";
+    else if (moveType == "mistake") backColor = "rgba(255, 164, 89, 0.4)";
+    else if (moveType == "blunder") backColor = "rgba(250, 65, 45, 0.4)";
+    else backColor = "rgba(255, 255, 0, 0.4)";
+
+    if (!moveType && lastMadeMove) {
       styles[lastMadeMove.from] = {
-        backgroundColor: "rgba(255, 255, 0, 0.4)",
+        backgroundColor: `${backColor}`,
       };
 
       styles[lastMadeMove.to] = {
-        backgroundColor: "rgba(255, 255, 0, 0.4)",
+        position: "relative",
+        backgroundColor: `${backColor}`,
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "top 0px right 0px",
+        backgroundSize: "40%",
+      };
+    } else if (lastMadeMove) {
+      styles[lastMadeMove.from] = {
+        backgroundColor: `${backColor}`,
+      };
+
+      styles[lastMadeMove.to] = {
+        position: "relative",
+        backgroundColor: `${backColor}`,
+        backgroundImage: `
+            url(/moveTypes/${moveType}.png)
+          `,
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "top 0px right 0px",
+        backgroundSize: "40%",
       };
     }
-    if (game.isCheckmate()) {
-      const kingColor = game.turn();
-      const kingSquare = game
+    if (gameRef.current.isCheckmate()) {
+      const kingColor = gameRef.current.turn();
+      const kingSquare = gameRef.current
         .board()
         .flat()
         .find(
@@ -194,117 +287,95 @@ const ChessAnalyzer = () => {
     }
 
     return styles;
-  }, [lastMadeMove, game]);
+  }, [lastMadeMove, currentMoveIndex]);
 
-  const nextMove = () => {
-    if (
-      history.length > 0 &&
-      currentMoveIndex < history.length - 1 &&
-      !isPlayingRef.current
-    ) {
-      setCurrentMoveIndex(currentMoveIndex + 1);
-      const tempChess = new Chess();
-      const moves = history.slice(0, currentMoveIndex + 2); // +2 because we incremented currentMoveIndex
-      for (const move of moves) {
-        const mv = {
-          from: move.from,
-          to: move.to,
-          promotion: move.promotion,
-        };
-        tempChess.move(mv);
-      }
-      setGame(tempChess);
-      setLastMadeMove(moves[moves.length - 1]);
+  const nextMove = useCallback(() => {
+    if (currentMoveIndex < history.length - 1) {
+      const nextMoveIndex = currentMoveIndex + 1;
+      const move = history[nextMoveIndex];
+      gameRef.current.move({
+        from: move.from,
+        to: move.to,
+        promotion: move.promotion,
+      });
+      setCurrentMoveIndex(nextMoveIndex);
+      setFen(gameRef.current.fen());
+      setLastMadeMove(move);
     }
-  };
+  }, [currentMoveIndex, history]);
 
-  const previousMove = () => {
-    if (currentMoveIndex >= 0 && !isPlayingRef.current) {
+  const previousMove = useCallback(() => {
+    if (currentMoveIndex >= 0) {
       setCurrentMoveIndex(currentMoveIndex - 1);
-      const tempChess = new Chess();
-      const moves = history.slice(0, currentMoveIndex);
-      for (const move of moves) {
-        tempChess.move({
-          from: move.from,
-          to: move.to,
-          promotion: move.promotion,
-        });
-      }
-      setGame(tempChess);
-      setLastMadeMove(moves[moves.length - 1]);
+      gameRef.current.undo(); // Simply undo the last move
+      setFen(gameRef.current.fen());
+      setLastMadeMove(history[currentMoveIndex - 1] || null);
     }
-  };
+  }, [currentMoveIndex, history]);
 
-  const firstMove = () => {
+  const firstMove = useCallback(() => {
     if (isPlayingRef.current) {
       isPlayingRef.current = false;
-      setIsPlaying(false);
       currentMoveIndexRef.current = -1;
     }
 
     setCurrentMoveIndex(-1);
-    setGame(new Chess());
+    gameRef.current = new Chess();
+    setFen(gameRef.current.fen());
     setLastMadeMove(null);
-  };
+  }, []);
 
-  const lastMove = () => {
+  const lastMove = useCallback(() => {
     if (isPlayingRef.current) {
       isPlayingRef.current = false;
-      setIsPlaying(false);
+      currentMoveIndexRef.current = history.length - 1;
     }
 
+    gameRef.current.loadPgn(pgn);
+    setFen(gameRef.current.fen());
     setCurrentMoveIndex(history.length - 1);
-    currentMoveIndexRef.current = history.length - 1;
-
-    const tempChess = new Chess();
-    tempChess.loadPgn(pgn);
-    setGame(tempChess);
     setLastMadeMove(history[history.length - 1]);
-  };
+  }, [history, pgn]);
 
-  const playMove = () => {
-    if (!isPlayingRef.current && currentMoveIndex < history.length - 1) {
-      isPlayingRef.current = true;
-      setIsPlaying(true);
-      currentMoveIndexRef.current = currentMoveIndex;
-      playNextMove();
-    } else {
-      isPlayingRef.current = false;
-      setIsPlaying(false);
-      setCurrentMoveIndex(currentMoveIndexRef.current);
-    }
-  };
-
-  const playNextMove = () => {
+  const playNextMove = useCallback(() => {
     if (
       !isPlayingRef.current ||
       currentMoveIndexRef.current >= history.length
     ) {
       isPlayingRef.current = false;
-      setIsPlaying(false);
       setCurrentMoveIndex(currentMoveIndexRef.current);
       return;
     }
 
     const nextMove = history[currentMoveIndexRef.current + 1];
-    game.move({
+    gameRef.current.move({
       from: nextMove.from,
       to: nextMove.to,
       promotion: nextMove.promotion,
     });
 
     currentMoveIndexRef.current += 1;
-    setGame(game);
+    setFen(gameRef.current.fen());
     setLastMadeMove(history[currentMoveIndexRef.current]);
 
     if (currentMoveIndexRef.current < history.length - 1) {
       setTimeout(() => playNextMove(), 1000);
     } else {
       isPlayingRef.current = false;
-      setIsPlaying(false);
       setCurrentMoveIndex(currentMoveIndexRef.current);
     }
-  };
+  }, [history]);
+
+  const playMove = useCallback(() => {
+    if (!isPlayingRef.current && currentMoveIndex < history.length - 1) {
+      isPlayingRef.current = true;
+      currentMoveIndexRef.current = currentMoveIndex;
+      playNextMove();
+    } else {
+      isPlayingRef.current = false;
+      setCurrentMoveIndex(currentMoveIndexRef.current);
+    }
+  }, [currentMoveIndex, history, playNextMove]);
 
   function extractPlayerInfo(pgn: string) {
     const getTagValue = (tag: string) => {
@@ -325,21 +396,6 @@ const ChessAnalyzer = () => {
     setBoardOrientation(boardOrientation == "white" ? "black" : "white");
   };
 
-  const samplePgn = `[Event "Live Chess"]
-                      [Site "Chess.com"]
-                      [Date "2024.01.15"]
-                      [Round "-"]
-                      [White "Player1"]
-                      [Black "Player2"]
-                      [Result "1-0"]
-                      [WhiteElo "1800"]
-                      [BlackElo "1750"]
-
-                      1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 d6 8. c3 O-O 9. h3 Nb8 10. d4 Nbd7 11. h4 1-0`;
-  // useEffect(() => {
-  //   loadPGN(samplePgn, new Chess());
-  // }, []);
-
   return (
     <div className="">
       <Card className="h-16 items-center p-4 m-3">
@@ -347,9 +403,9 @@ const ChessAnalyzer = () => {
           <label className="text-2xl font-bold">chessty</label>
         </CardContent>
       </Card>
-      <div className="flex flex-col lg:flex-row gap-10 lg:min-h-[calc(100vh-8rem)]">
+      <div className="flex flex-col lg:flex-row gap-5 lg:min-h-[calc(100vh-8rem)]">
         <div className="hidden lg:block w-[calc(3vw)] rounded-xs"></div>
-        <div className="m-1 lg:m-3">
+        <div className="mx-1 mt-2 lg:m-3">
           <div className="hidden lg:block h-[calc(5vh)] rounded-xs"></div>
           <div className="ml-9 mb-1.5 lg:mb-2.5">
             <PlayerBoard playerInfo={blackPlayerInfo} />
@@ -363,9 +419,9 @@ const ChessAnalyzer = () => {
               mateIn={mateIn}
               orientation={boardOrientation}
             />
-            <div className="lg:min-h-[calc(100vh-24rem-10px)] max-h-[calc(100vh-18rem-8px)] aspect-square">
+            <div className="lg:min-h-[calc(100vh-24rem-10px)] max-h-[calc(100vh-18rem-8px)] aspect-square overflow-visible relative">
               <ChessBoard
-                game={game}
+                fen={fen}
                 bestMove={bestMove}
                 customSquareStyles={customSquareStyles}
                 boardOrientation={boardOrientation}
@@ -405,16 +461,23 @@ const ChessAnalyzer = () => {
             </div>
           ) : undefined}
           {analyzingState == 3 ? (
-            <div className="flex flex-col gap-2">
-              <Card className="items-center p-1.5 m-3 mb-0 rounded-md">
+            <div className="flex flex-col gap-2 mx-3">
+              <Card className="items-center p-1.5 rounded-md">
                 <CardContent>
                   <label className="text-sm font-bold">Game Review</label>
                 </CardContent>
               </Card>
-              <div className="h-20 bg-[#403d39] m-3 mt-0 rounded-sm overflow-hidden">
+              <div className="h-20 bg-[#403d39] rounded-sm overflow-hidden">
                 <EvalGraph analysisData={analysis.current} />
               </div>
-              <Card className="w-full"></Card>
+              <MoveBox verdicts={verdicts.current} />
+              <Button
+                size="default"
+                className="bg-lime-500 font-bold hover:bg-lime-400"
+                onClick={() => setAnalyzingState(4)}
+              >
+                Show Moves
+              </Button>
             </div>
           ) : undefined}
 
