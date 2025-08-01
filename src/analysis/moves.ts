@@ -20,19 +20,20 @@ export const verdict = (
   currMove: AnalysisResult,
   prevMove: AnalysisResult,
 ): string => {
-  const shift =
-    evalWinninChances(turn, prevMove) - evalWinninChances(turn, currMove);
-  // console.log(shift);
-
-  if (turn == "b" && currMove.winChance == 0 && prevMove.winChance != 0)
+  if (turn == "b" && currMove.winChance == 0 && prevMove.winChance != 0) {
     return "blunder";
-  else if (
+  } else if (
     turn == "w" &&
     currMove.winChance == 100 &&
     prevMove.winChance != 100
-  )
+  ) {
     return "blunder";
+  }
 
+  const shift =
+    evalWinninChances(turn, prevMove) - evalWinninChances(turn, currMove);
+  // console.log(shift);
+  //
   if (shift > 25) return "blunder";
   else if (shift >= 11) return "mistake";
   else if (shift > 6) return "inaccuracy";

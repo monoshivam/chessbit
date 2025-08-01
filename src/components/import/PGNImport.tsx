@@ -1,6 +1,5 @@
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Chess } from "chess.js";
 
 export default function PGNImport({
   pgn,
@@ -9,7 +8,7 @@ export default function PGNImport({
 }: {
   pgn: string;
   setPgn: (pgn: string) => void;
-  loadPGN: (pgn: string, game: Chess) => Promise<void>;
+  loadPGN: (pgn: string) => Promise<void>;
 }) {
   const isDisabled = pgn.trim() === "";
   return (
