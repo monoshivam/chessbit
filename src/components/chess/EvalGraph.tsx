@@ -1,34 +1,13 @@
 "use client";
 
 import React from "react";
-import { AreaChart, Area, ResponsiveContainer, ReferenceLine } from "recharts";
-
-const temp = [
-  {
-    a: "a",
-    x: 50,
-  },
-  {
-    a: "b",
-    x: 10,
-  },
-  {
-    a: "c",
-    x: 65,
-  },
-  {
-    a: "d",
-    x: 43,
-  },
-  {
-    a: "e",
-    x: 23,
-  },
-  {
-    a: "f",
-    x: 87,
-  },
-];
+import {
+  AreaChart,
+  Area,
+  ResponsiveContainer,
+  ReferenceLine,
+  YAxis,
+} from "recharts";
 
 function EvalGraph({ analysisData }) {
   console.log(analysisData);
@@ -57,6 +36,7 @@ function EvalGraph({ analysisData }) {
         margin={{ top: 0, left: 0, right: 0, bottom: 0 }}
         data={processedData}
       >
+        <YAxis domain={[0, 100]} hide />
         <Area
           type="bumpX"
           dataKey="evaluation"
