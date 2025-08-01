@@ -184,6 +184,8 @@ const ChessAnalyzer = () => {
         analysis.current = batchResult.results;
 
         for (let i = 1; i < batchResult.results.length; i++) {
+          console.log("MOVE: ", i);
+
           const turn: string = i % 2 === 0 ? "w" : "b";
           const bMove: string = analysis.current[i - 1].moves.split(" ")[0];
           const moveMade: string = history[i - 1].from + history[i - 1].to;

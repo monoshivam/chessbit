@@ -20,6 +20,9 @@ export const verdict = (
   currMove: AnalysisResult,
   prevMove: AnalysisResult,
 ): string => {
+  console.log("PREV: ", prevMove.winChance);
+  console.log("CURR: ", currMove.winChance);
+
   if (turn == "b" && currMove.winChance == 0 && prevMove.winChance != 0) {
     return "blunder";
   } else if (
@@ -34,7 +37,7 @@ export const verdict = (
     evalWinninChances(turn, prevMove) - evalWinninChances(turn, currMove);
   // console.log(shift);
   //
-  if (shift > 25) return "blunder";
+  if (shift > 19) return "blunder";
   else if (shift >= 11) return "mistake";
   else if (shift > 6) return "inaccuracy";
   else return "goodmove";
