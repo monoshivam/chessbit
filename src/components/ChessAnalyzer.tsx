@@ -419,7 +419,7 @@ const ChessAnalyzer = () => {
       <div className="flex flex-col lg:flex-row gap-5 lg:min-h-[calc(100vh-8rem)]">
         <div className="hidden lg:block w-[calc(14vw)] rounded-xs"></div>
         <div className="mx-1 mt-2 lg:m-3">
-          <div className="hidden lg:block h-[calc(5vh)] rounded-xs"></div>
+          <div className="hidden lg:block h-[calc(8vh)] rounded-xs"></div>
           <div className="ml-9 mb-1.5 lg:mb-2.5">
             <PlayerBoard playerInfo={blackPlayerInfo} />
           </div>
@@ -432,7 +432,7 @@ const ChessAnalyzer = () => {
               mateIn={mateIn}
               orientation={boardOrientation}
             />
-            <div className="lg:min-h-[calc(100vh-24rem-10px)] max-h-[calc(100vh-18rem-8px)] aspect-square overflow-visible relative">
+            <div className="lg:min-h-[calc(100vh-24rem-90px)] max-h-[calc(100vh-18rem-8px)] aspect-square overflow-visible relative">
               <ChessBoard
                 fen={fen}
                 bestMove={bestMove}
@@ -494,8 +494,26 @@ const ChessAnalyzer = () => {
             </div>
           ) : undefined}
           {analyzingState == 4 ? (
-            <div className="flex flex-col gap-2 mx-3">
-              <MoveBox></MoveBox>
+            <div className="flex flex-col gap-2 mx-3 ">
+              <Button
+                size="default"
+                className="bg-lime-500 font-bold md hover:bg-lime-400 border-1 relative"
+                onClick={() => setAnalyzingState(3)}
+              >
+                <ChevronLeft
+                  strokeWidth={3}
+                  className="absolute left-0 mx-2 "
+                ></ChevronLeft>
+                Highlights
+              </Button>
+              <div className="h-20 bg-[#403d39] rounded-sm overflow-hidden">
+                <EvalGraph analysisData={analysis.current} />
+              </div>
+              <MoveBox
+                history={history}
+                verdicts={verdicts.current}
+                currMoveIndex={currentMoveIndex}
+              ></MoveBox>
             </div>
           ) : undefined}
 
@@ -542,7 +560,7 @@ const ChessAnalyzer = () => {
             </Button>
           </Card>
         </div>
-        <div className="hidden lg:block w-[calc(11vw)] rounded-xs"></div>
+        <div className="hidden lg:block w-[calc(12vw)] rounded-xs"></div>
       </div>
     </div>
   );
