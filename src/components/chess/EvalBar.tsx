@@ -23,14 +23,22 @@ export default function EvalBar({ eval: evaluation, mateIn, orientation }) {
         className="bg-stone-800 transition-all duration-300"
         style={{ height: `${100 - whitePercent}%` }}
       />
-      <div className="text-[9px] mix-blend-difference absolute ml-0.5 mb-0.5">
-        {Math.abs(mateIn) == 999
-          ? "M"
-          : mateIn > 0
-            ? `M${mateIn}`
-            : mateIn < 0
-              ? `M${mateIn}`
-              : clampedEval.toFixed(1)}
+      <div className="w-full text-[9px] mix-blend-difference absolute mb-0.5 flex flex-col items-center justify-center">
+        {Math.abs(mateIn) == 999 ? (
+          <div>M</div>
+        ) : mateIn > 0 ? (
+          <>
+            <div>M</div>
+            <div>{mateIn}</div>
+          </>
+        ) : mateIn < 0 ? (
+          <>
+            <div>M</div>
+            <div>{mateIn}</div>
+          </>
+        ) : (
+          clampedEval.toFixed(1)
+        )}
       </div>
     </div>
   );
