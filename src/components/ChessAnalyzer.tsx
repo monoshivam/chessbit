@@ -31,6 +31,21 @@ import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Progress } from "./ui/progress";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const ChessAnalyzer = () => {
   const gameRef = useRef(new Chess());
@@ -60,6 +75,15 @@ const ChessAnalyzer = () => {
   const analysis = useRef<any[]>([]);
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const verdicts = useRef<string[]>([]);
+
+  const engine = useRef<string>("lite");
+  const [chosen, setChosen] = useState("lite");
+  const [isOpen, setIsOpen] = useState(false);
+  const handleEngineChange = (value) => {
+    engine.current = value;
+    setChosen(value);
+    setIsOpen(false);
+  };
 
   const playSound = useCallback(() => {
     let soundType = "move";
@@ -122,6 +146,7 @@ const ChessAnalyzer = () => {
         const batchResult = await analyzePositions({
           positions: positions,
           depth: 12,
+          engine: engine.current,
           onProgress: (completed, total) => {
             const progress = (completed / total) * 100;
             setAnalysisProgress(progress);
@@ -168,8 +193,9 @@ const ChessAnalyzer = () => {
           const tPosition: string[] = [tfen];
           const bResult = await analyzePositions({
             positions: tPosition,
-            depth: 20,
-            onProgress: (completed, total, currentResult) => {
+            depth: 12,
+            engine: engine.current,
+            onProgress: (completed, total) => {
               const progress = (completed / total) * 100;
               setAnalysisProgress(progress);
               console.log(
@@ -303,7 +329,11 @@ const ChessAnalyzer = () => {
   }, [lastMadeMove, currentMoveIndex]);
 
   const nextMove = useCallback(() => {
-    if (currentMoveIndex < history.length - 1 && !isPlayingRef.current) {
+    if (
+      currentMoveIndex < history.length - 1 &&
+      !isPlayingRef.current &&
+      history.length > 0
+    ) {
       const nextMoveIndex = currentMoveIndex + 1;
       const move = history[nextMoveIndex];
       gameRef.current.move({
@@ -327,7 +357,7 @@ const ChessAnalyzer = () => {
   };
 
   const previousMove = useCallback(() => {
-    if (currentMoveIndex >= 0 && !isPlayingRef.current) {
+    if (currentMoveIndex >= 0 && !isPlayingRef.current && history.length > 0) {
       setCurrentMoveIndex(currentMoveIndex - 1);
       gameRef.current.load(history[currentMoveIndex].before); // Simply undo the last move
       setFen(gameRef.current.fen());
@@ -394,7 +424,11 @@ const ChessAnalyzer = () => {
   }, [history]);
 
   const playMove = useCallback(() => {
-    if (!isPlayingRef.current && currentMoveIndex < history.length - 1) {
+    if (
+      !isPlayingRef.current &&
+      currentMoveIndex < history.length - 1 &&
+      history.length > 0
+    ) {
       setIsPlaying(true);
       isPlayingRef.current = true;
       currentMoveIndexRef.current = currentMoveIndex;
@@ -424,6 +458,15 @@ const ChessAnalyzer = () => {
   const rotateBoard = () => {
     setBoardOrientation(boardOrientation == "white" ? "black" : "white");
   };
+  const boardPlayerData = (player) => {
+    if (player == "white" && boardOrientation == "white")
+      return whitePlayerInfo;
+    else if (player == "white" && boardOrientation == "black")
+      return blackPlayerInfo;
+    else if (player == "black" && boardOrientation == "white")
+      return blackPlayerInfo;
+    else return whitePlayerInfo;
+  };
 
   return (
     <div className="">
@@ -437,7 +480,7 @@ const ChessAnalyzer = () => {
         <div className="mx-1 mt-2 lg:m-3">
           <div className="hidden lg:block h-[calc(8vh)] rounded-xs"></div>
           <div className="ml-9 mb-1.5 lg:mb-2.5">
-            <PlayerBoard playerInfo={blackPlayerInfo} />
+            <PlayerBoard playerInfo={boardPlayerData("black")} />
           </div>
           <Card
             id="chessBoard"
@@ -457,26 +500,74 @@ const ChessAnalyzer = () => {
               />
             </div>
           </Card>
-          <div className="ml-9 mt-1.5 lg:mt-2.5">
-            <PlayerBoard playerInfo={whitePlayerInfo} />
+          <div className="flex ml-9 mt-1.5 lg:mt-2.5 justify-between">
+            <PlayerBoard playerInfo={boardPlayerData("white")} />
+            <Button
+              className="bg-[#323130] hover:bg-[#474944] mr-3 h-9 lg:h-12 lg:w-16 md:h-10 md:w-20 my-auto"
+              size="lg"
+              onClick={rotateBoard}
+            >
+              <RefreshCcw color="#adadad"></RefreshCcw>
+            </Button>
           </div>
         </div>
         <div className="hidden lg:block w-[2px] bg-neutral-500 rounded-xs"></div>
-        <div className="flex-1 relative lg:m-3 ">
+        <div className="flex-1 relative lg:m-3">
           {analyzingState == 1 ? (
-            <Tabs
-              className="items-center w-full h-[calc(100%-3rem)]"
-              defaultValue="pgn"
-            >
-              <TabsList>
-                <TabsTrigger value="pgn">From PGN</TabsTrigger>
-                <TabsTrigger value="chesscom">chess.com</TabsTrigger>
-              </TabsList>
-              <TabsContent value="pgn" className="w-full p-3 h-full">
-                <PGNImport pgn={pgn} setPgn={setPgn} loadPGN={loadPGN} />
-              </TabsContent>
-              <TabsContent value="chesscom"></TabsContent>
-            </Tabs>
+            <>
+              {/* <div className="absolute top-0 right-0 w-[30%] h-[18%] mr-4">
+
+              </div> */}
+              <Tabs
+                className="w-full h-[calc(100%-3.5rem)] md:items-center"
+                defaultValue="pgn"
+              >
+                <div className="flex flex-row gap-3 mx-4">
+                  <TabsList>
+                    <TabsTrigger value="pgn">From PGN</TabsTrigger>
+                    <TabsTrigger value="chesscom">chess.com</TabsTrigger>
+                  </TabsList>
+                  <div className="flex-1 md:flex-0">
+                    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                      <DialogTrigger asChild>
+                        <Button className="w-full font-medium bg-[#292524] text-neutral-100 border-1 hover:bg-neutral-700">
+                          Engine
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Select Stockfish Version</DialogTitle>
+                          <DialogDescription>
+                            Recommended: Stockfish-17-Lite
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4">
+                          <Select onValueChange={handleEngineChange}>
+                            <SelectTrigger className="w-full">
+                              <SelectValue
+                                placeholder={`${chosen == "lite" ? "Stockfish-17-Lite" : "Stockfish-17.1-Full"}`}
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="lite">
+                                Stockfish-17-Lite (default)
+                              </SelectItem>
+                              <SelectItem value="main">
+                                Stockfish-17.1-Full (79 MB)
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </div>
+                <TabsContent value="pgn" className="w-full p-3 h-full">
+                  <PGNImport pgn={pgn} setPgn={setPgn} loadPGN={loadPGN} />
+                </TabsContent>
+                <TabsContent value="chesscom"></TabsContent>
+              </Tabs>
+            </>
           ) : undefined}
           {analyzingState == 2 ? (
             <div className="w-full h-full flex lg:justify-center flex-col items-center">
