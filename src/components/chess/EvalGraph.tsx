@@ -10,7 +10,7 @@ import {
 } from "recharts";
 
 function EvalGraph({ analysisData }) {
-  console.log(analysisData);
+  // console.log(analysisData);
   const processedData = analysisData.map((item) => {
     if (Number(item.mate) < 0) {
       const evaluation = 0;
@@ -28,7 +28,7 @@ function EvalGraph({ analysisData }) {
     };
   });
   processedData[0].evaluation = 50;
-  console.log(processedData);
+  // console.log(processedData);
 
   return (
     <ResponsiveContainer width="100%" height="100%">

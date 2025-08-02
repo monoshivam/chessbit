@@ -1,8 +1,12 @@
-import { Card } from "../ui/card";
 import { ScrollArea } from "../ui/scroll-area";
 
-export default function MoveBox({ history, verdicts, currMoveIndex }) {
-  console.log(currMoveIndex);
+export default function MoveBox({
+  history,
+  verdicts,
+  currMoveIndex,
+  moveClick,
+}) {
+  // console.log(currMoveIndex);
 
   const moves = [];
 
@@ -45,6 +49,7 @@ export default function MoveBox({ history, verdicts, currMoveIndex }) {
         <div className="w-full">
           <div
             className={`w-full flex flex-row items-start pl-2 ${i == currMoveIndex ? "bg-[#484745] rounded-md border-1" : ""}`}
+            onClick={() => moveClick(history[i].after, i)}
           >
             {whiteMove ? (
               <div
@@ -61,6 +66,7 @@ export default function MoveBox({ history, verdicts, currMoveIndex }) {
         <div className="w-full">
           <div
             className={`w-full flex flex-row items-start pl-2 ${i + 1 == currMoveIndex ? "bg-[#484745] rounded-md border-1" : ""}`}
+            onClick={() => moveClick(history[i + 1].after, i + 1)}
           >
             {blackMove ? (
               <div

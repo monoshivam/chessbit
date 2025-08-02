@@ -20,8 +20,8 @@ export const verdict = (
   currMove: AnalysisResult,
   prevMove: AnalysisResult,
 ): string => {
-  console.log("PREV: ", prevMove.winChance);
-  console.log("CURR: ", currMove.winChance);
+  // console.log("PREV: ", prevMove.winChance);
+  // console.log("CURR: ", currMove.winChance);
 
   if (turn == "b" && currMove.winChance == 0 && prevMove.winChance != 0) {
     return "blunder";

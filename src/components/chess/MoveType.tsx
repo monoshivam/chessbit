@@ -23,8 +23,8 @@ export default function MoveType({ verdicts }) {
       blackVerdicts[verdicts[i]]++;
     }
   }
-  console.log(whiteVerdicts);
-  console.log(blackVerdicts);
+  // console.log(whiteVerdicts);
+  // console.log(blackVerdicts);
 
   return (
     <Card className="p-0 w-full">
