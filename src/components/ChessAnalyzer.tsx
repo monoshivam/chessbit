@@ -12,6 +12,7 @@ import { Chess } from "chess.js";
 import ChessBoard from "@/components/chess/ChessBoard";
 import EvalBar from "./chess/EvalBar";
 import PGNImport from "@/components/import/PGNImport";
+import ChessComImport from "@/components/import/ChessComImport";
 import PlayerBoard from "@/components/chess/PlayerBoard";
 import EvalGraph from "./chess/EvalGraph";
 import MoveType from "./chess/MoveType";
@@ -565,7 +566,9 @@ const ChessAnalyzer = () => {
                 <TabsContent value="pgn" className="w-full p-3 h-full">
                   <PGNImport pgn={pgn} setPgn={setPgn} loadPGN={loadPGN} />
                 </TabsContent>
-                <TabsContent value="chesscom"></TabsContent>
+                <TabsContent value="chesscom" className="w-full p-3 h-full">
+                  <ChessComImport loadPGN={loadPGN}></ChessComImport>
+                </TabsContent>
               </Tabs>
             </>
           ) : undefined}

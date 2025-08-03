@@ -8,7 +8,7 @@ export default function PGNImport({
 }: {
   pgn: string;
   setPgn: (pgn: string) => void;
-  loadPGN: (pgn: string) => Promise<void>;
+  loadPGN: (pgn: string) => void;
 }) {
   const isDisabled = pgn.trim() === "";
   return (
