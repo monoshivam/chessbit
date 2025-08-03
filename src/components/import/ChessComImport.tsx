@@ -144,7 +144,7 @@ export default function ChessComInterface({
         </Button>
       </div>
       <ScrollArea
-        className={`${userInfo && userInfo.code != 0 ? "h-[calc(30vh)] lg:h-[calc(100vh-20rem)]" : ""} px-2 py-2 rounded-md bg-[#1c1917] border-1`}
+        className={`${userInfo && userInfo.code != 0 ? "h-[calc(30vh)] lg:h-[calc(100vh-35.5rem)]" : ""} px-2 py-2 rounded-md bg-[#1c1917] border-1`}
       >
         {!userInfo ? (
           <label>Search the username!</label>

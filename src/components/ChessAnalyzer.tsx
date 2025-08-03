@@ -477,7 +477,7 @@ const ChessAnalyzer = () => {
         </CardContent>
       </Card>
       <div className="flex flex-col lg:flex-row gap-5 lg:min-h-[calc(100vh-8rem)]">
-        <div className="hidden lg:block w-[calc(14vw)] rounded-xs"></div>
+        <div className="hidden lg:block w-[calc(10%)] rounded-xs"></div>
         <div className="mx-1 mt-2 lg:m-3">
           <div className="hidden lg:block h-[calc(8vh)] rounded-xs"></div>
           <div className="ml-9 mb-1.5 lg:mb-2.5">
@@ -515,12 +515,9 @@ const ChessAnalyzer = () => {
         <div className="hidden lg:block w-[2px] bg-neutral-500 rounded-xs"></div>
         <div className="flex-1 relative lg:m-3">
           {analyzingState == 1 ? (
-            <>
-              {/* <div className="absolute top-0 right-0 w-[30%] h-[18%] mr-4">
-
-              </div> */}
+            <div className="flex w-full h-[calc(100%-3.5rem)] md:items-center lg:items-center lg:justify-center">
               <Tabs
-                className="w-full h-[calc(100%-3.5rem)] md:items-center"
+                className="w-full h-[calc(70%-3.5rem)] md:items-center"
                 defaultValue="pgn"
               >
                 <div className="flex flex-row gap-3 mx-4">
@@ -570,7 +567,7 @@ const ChessAnalyzer = () => {
                   <ChessComImport loadPGN={loadPGN}></ChessComImport>
                 </TabsContent>
               </Tabs>
-            </>
+            </div>
           ) : undefined}
           {analyzingState == 2 ? (
             <div className="w-full h-full flex lg:justify-center flex-col items-center">
@@ -584,7 +581,7 @@ const ChessAnalyzer = () => {
             </div>
           ) : undefined}
           {analyzingState == 3 ? (
-            <div className="flex flex-col gap-2 mx-3">
+            <div className="h-full flex flex-col gap-2 mx-3 lg:justify-center">
               <Card className="items-center p-1.5 rounded-md">
                 <CardContent>
                   <label className="text-sm font-bold">Game Review</label>
@@ -604,7 +601,7 @@ const ChessAnalyzer = () => {
             </div>
           ) : undefined}
           {analyzingState == 4 ? (
-            <div className="flex flex-col gap-2 mx-3 ">
+            <div className="h-full flex flex-col gap-2 mx-3 lg:justify-center">
               <Button
                 size="default"
                 className="bg-lime-500 font-bold md hover:bg-lime-400 border-1 relative"
@@ -671,7 +668,7 @@ const ChessAnalyzer = () => {
             </Button>
           </Card>
         </div>
-        <div className="hidden lg:block w-[calc(12vw)] rounded-xs"></div>
+        <div className="hidden lg:block w-[calc(5%)]"></div>
       </div>
     </div>
   );
