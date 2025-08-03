@@ -477,15 +477,15 @@ const ChessAnalyzer = () => {
         </CardContent>
       </Card>
       <div className="flex flex-col lg:flex-row gap-5 lg:min-h-[calc(100vh-8rem)]">
-        <div className="hidden lg:block w-[calc(10%)] rounded-xs"></div>
+        <div className="hidden lg:block w-[calc(13%)] rounded-xs"></div>
         <div className="mx-1 mt-2 lg:m-3">
           <div className="hidden lg:block h-[calc(8vh)] rounded-xs"></div>
-          <div className="ml-9 mb-1.5 lg:mb-2.5">
+          <div className="ml-9 mb-1.5 lg:mb-2.5 md:ml-[15vw] md:mr-[15vw] lg:ml-0 lg:mr-0">
             <PlayerBoard playerInfo={boardPlayerData("black")} />
           </div>
           <Card
             id="chessBoard"
-            className="lg:flex-1 grid grid-cols-[auto_1fr] gap-2 p-2 rounded-sm place-content-center"
+            className="lg:flex-1 grid grid-cols-[auto_1fr] gap-2 p-2 rounded-sm place-content-center md:ml-[15vw] md:mr-[15vw] lg:ml-0 lg:mr-0"
           >
             <EvalBar
               eval={evaluation}
@@ -501,7 +501,7 @@ const ChessAnalyzer = () => {
               />
             </div>
           </Card>
-          <div className="flex ml-9 mt-1.5 lg:mt-2.5 justify-between">
+          <div className="flex ml-9 mt-1.5 lg:mt-2.5 justify-between md:ml-[15vw] md:mr-[15vw] lg:ml-0 lg:mr-0">
             <PlayerBoard playerInfo={boardPlayerData("white")} />
             <Button
               className="bg-[#323130] hover:bg-[#474944] mr-3 h-9 lg:h-12 lg:w-16 md:h-10 md:w-20 my-auto"
@@ -668,7 +668,7 @@ const ChessAnalyzer = () => {
             </Button>
           </Card>
         </div>
-        <div className="hidden lg:block w-[calc(5%)]"></div>
+        <div className="hidden lg:block w-[calc(14%)]"></div>
       </div>
     </div>
   );
