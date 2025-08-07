@@ -7,7 +7,6 @@ import {
   ResponsiveContainer,
   ReferenceLine,
   YAxis,
-  XAxis,
 } from "recharts";
 
 function EvalGraph({

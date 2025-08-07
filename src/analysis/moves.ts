@@ -1,3 +1,5 @@
+// this calculates the movetype utilizing the logic by lichess, modifying the parameters a bit
+
 type AnalysisResult = {
   eval: number;
   moves: string;

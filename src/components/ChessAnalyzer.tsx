@@ -17,6 +17,8 @@ import PlayerBoard from "@/components/chess/PlayerBoard";
 import EvalGraph from "./chess/EvalGraph";
 import MoveType from "./chess/MoveType";
 import MoveBox from "./chess/MoveBox";
+import { calculateGameAccuracy } from "../analysis/gameAccuracy";
+import GameInfo from "./chess/GameInfo";
 
 import {
   Play,
@@ -73,8 +75,10 @@ const ChessAnalyzer = () => {
   const [boardOrientation, setBoardOrientation] = useState("white");
   const [history, setHistory] = useState<object[]>([]);
   const isFirstRender = useRef(true);
+  const gameAccuracies = useRef<object>({});
   const analysis = useRef<any[]>([]);
   const [analysisProgress, setAnalysisProgress] = useState(0);
+  const totalTime = useRef<number>(0);
   const verdicts = useRef<string[]>([]);
 
   const engine = useRef<string>("lite");
@@ -117,6 +121,7 @@ const ChessAnalyzer = () => {
 
   const loadPGN = useCallback((pgn: string) => {
     try {
+      totalTime.current = extractTimeFromPGN(pgn);
       gameRef.current.loadPgn(pgn);
       setPgn(pgn);
       setFen(gameRef.current.fen());
@@ -132,6 +137,14 @@ const ChessAnalyzer = () => {
       console.error("Error loading PGN:", error);
     }
   }, []);
+
+  function extractTimeFromPGN(pgn: string): number | null {
+    const timeControlMatch = pgn.match(/\[TimeControl\s+"([\d+]+)"\]/);
+    if (!timeControlMatch) return null;
+    const timeControlValue = timeControlMatch[1];
+    const firstNumberMatch = timeControlValue.match(/^\d+/);
+    return firstNumberMatch ? parseInt(firstNumberMatch[0], 10) : null;
+  }
 
   useEffect(() => {
     if (isFirstRender.current) {
@@ -226,7 +239,10 @@ const ChessAnalyzer = () => {
           );
         }
 
-        console.log("Batch analysis complete:", analysis.current);
+        gameAccuracies.current = calculateGameAccuracy(analysis.current);
+
+        console.log("Accuracies: ", gameAccuracies.current);
+        console.log("Batch analysis complete: ", analysis.current);
         console.log("Verdicts: ", verdicts.current);
 
         if (batchResult.completed === positions.length) {
@@ -596,6 +612,12 @@ const ChessAnalyzer = () => {
                   boardOrientation={boardOrientation}
                 />
               </div>
+              <GameInfo
+                accuracies={gameAccuracies.current}
+                whitePlayerInfo={whitePlayerInfo}
+                blackPlayerInfo={blackPlayerInfo}
+                time={totalTime.current}
+              />
               <MoveType verdicts={verdicts.current} />
               <Button
                 size="default"
@@ -638,7 +660,9 @@ const ChessAnalyzer = () => {
           ) : undefined}
 
           <div id="spacer" className="h-16 lg:h-0"></div>
-          <Card className="flex flex-row p-1.5 gap-1 fixed bottom-0 w-full rounded-b-none lg:absolute lg:rounded-sm">
+          <Card
+            className={`flex flex-row p-1.5 gap-1 fixed bottom-0 w-full rounded-b-none lg:absolute lg:rounded-sm ${analyzingState != 3 ? "pointer-events-none" : ""}`}
+          >
             <Button
               className="bg-[#323130] hover:bg-[#474944] flex-1"
               size="lg"
