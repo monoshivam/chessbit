@@ -7,10 +7,72 @@ import {
   ResponsiveContainer,
   ReferenceLine,
   YAxis,
+  XAxis,
 } from "recharts";
 
-function EvalGraph({ analysisData }) {
+function EvalGraph({
+  analysisData,
+  verdicts,
+  moveClick,
+  currMoveIndex,
+  boardOrientation,
+}) {
   // console.log(analysisData);
+
+  const orien = boardOrientation == "white" ? false : true;
+
+  const InteractiveDot = (props) => {
+    const { cx, cy, index } = props;
+    // console.log(index);
+    // console.log(verdicts);
+
+    const sw = index - 1 == currMoveIndex ? 2 : 0;
+
+    const color =
+      verdicts[index - 1] == "blunder"
+        ? "#fa412d"
+        : verdicts[index - 1] == "mistake"
+          ? "#ffa459"
+          : verdicts[index - 1] == "inaccuracy"
+            ? "#56b4e9"
+            : "#000000";
+
+    let dispRad;
+
+    if (index == 0 || index == analysisData.length - 1) {
+      dispRad = 0;
+    } else if (!orien && (index - 1) % 2 == 0) {
+      if (
+        verdicts[index - 1] == "blunder" ||
+        verdicts[index - 1] == "mistake" ||
+        verdicts[index - 1] == "inaccuracy"
+      ) {
+        dispRad = 5;
+      } else dispRad = 0;
+    } else if (orien && (index - 1) % 2 != 0) {
+      if (
+        verdicts[index - 1] == "blunder" ||
+        verdicts[index - 1] == "mistake" ||
+        verdicts[index - 1] == "inaccuracy"
+      ) {
+        dispRad = 5;
+      } else dispRad = 0;
+    }
+
+    return (
+      <circle
+        cx={cx}
+        cy={cy}
+        r={dispRad}
+        fill={color}
+        stroke="#1c1917"
+        strokeWidth={sw}
+        onClick={() => moveClick(analysisData[index].fen, index - 1)}
+        style={{ cursor: "pointer" }}
+      />
+    );
+  };
+
   const processedData = analysisData.map((item) => {
     if (Number(item.mate) < 0) {
       const evaluation = 0;
@@ -36,13 +98,16 @@ function EvalGraph({ analysisData }) {
         margin={{ top: 0, left: 0, right: 0, bottom: 0 }}
         data={processedData}
       >
-        <YAxis domain={[0, 100]} hide />
+        <YAxis domain={[0, 100]} hide reversed={orien} />
         <Area
           type="bumpX"
           dataKey="evaluation"
           fill="white"
           stroke="white"
           fillOpacity={1}
+          dot={<InteractiveDot />}
+          activeDot={false}
+          animationDuration={700}
         />
         <ReferenceLine y={50} stroke="#666360" strokeWidth={1} />
       </AreaChart>

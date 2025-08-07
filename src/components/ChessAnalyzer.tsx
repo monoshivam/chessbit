@@ -588,7 +588,13 @@ const ChessAnalyzer = () => {
                 </CardContent>
               </Card>
               <div className="h-20 bg-[#403d39] rounded-sm overflow-hidden">
-                <EvalGraph analysisData={analysis.current} />
+                <EvalGraph
+                  analysisData={analysis.current}
+                  verdicts={verdicts.current}
+                  moveClick={moveClick}
+                  currMoveIndex={currentMoveIndex}
+                  boardOrientation={boardOrientation}
+                />
               </div>
               <MoveType verdicts={verdicts.current} />
               <Button
@@ -614,7 +620,13 @@ const ChessAnalyzer = () => {
                 Highlights
               </Button>
               <div className="h-20 bg-[#403d39] rounded-sm overflow-hidden">
-                <EvalGraph analysisData={analysis.current} />
+                <EvalGraph
+                  analysisData={analysis.current}
+                  verdicts={verdicts.current}
+                  moveClick={moveClick}
+                  currMoveIndex={currentMoveIndex}
+                  boardOrientation={boardOrientation}
+                />
               </div>
               <MoveBox
                 history={history}
