@@ -87,7 +87,7 @@ export default function MoveBox({
   return (
     <ScrollArea className="px-2 pt-2 rounded-sm flex flex-col bg-[#1c1917] border-1 h-[calc(100vh-22rem)] lg:h-[calc(100vh-36rem)]">
       <div className="w-full flex items-center justify-center bg-[#2a2926] rounded-sm py-0.5 mb-1.5">
-        <label className="text-sm font-bold mb-1 ">Moves</label>
+        <label className="text-sm font-bold my-1 ">Moves</label>
       </div>
       {moves}
     </ScrollArea>

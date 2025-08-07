@@ -106,7 +106,7 @@ function EvalGraph({
           fillOpacity={1}
           dot={<InteractiveDot />}
           activeDot={false}
-          animationDuration={700}
+          animationDuration={500}
         />
         <ReferenceLine y={50} stroke="#666360" strokeWidth={1} />
       </AreaChart>
