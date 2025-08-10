@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { Button } from "../ui/button";
 import { ScrollArea } from "../ui/scroll-area";
+import Image from "next/image";
 
 const monthMap = {
   1: "Jan",
@@ -69,7 +70,7 @@ export default function ChessComInterface({
       const blackName = userInfo.games[i].black.username;
       const blackRating = userInfo.games[i].black.rating;
 
-      let gameEndState;
+      let gameEndState: string;
       if (username.current == userInfo.games[i].white.username) {
         gameEndState =
           userInfo.games[i].white.result == "win"
@@ -113,13 +114,21 @@ export default function ChessComInterface({
           </div>
           <div className="w-full h-full flex justify-end mr-2 gap-4 items-center">
             <label className="font-medium text-xs text-center text-">{`${date[2]} ${monthMap[date[1]]} ${date[0]}`}</label>
-            <img src={`/gameStats/${gameEndState}.png`} className="size-5" />
+            <div className="size-5 overflow-hidden">
+              <Image
+                src={`/gameStats/${gameEndState}.png`}
+                alt="gamestat"
+                width={20}
+                height={20}
+                className="w-full h-full object-cover"
+              />
+            </div>
           </div>
         </div>,
       );
     }
     return games;
-  }, [userInfo]);
+  }, [userInfo, loadPGN]);
 
   return (
     <div className="flex flex-col gap-2 w-full">

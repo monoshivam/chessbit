@@ -31,7 +31,7 @@ import {
   Github,
   BadgeInfo,
 } from "lucide-react";
-
+import Image from "next/image";
 import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
@@ -52,12 +52,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { Move } from "chess.js";
+
+type AnalysisResult = {
+  eval: number;
+  moves: string;
+  fen: string;
+  winChance: number;
+  continuationArr: string[][];
+  mate: number | null;
+  centipawns: number | null;
+};
 
 const ChessAnalyzer = () => {
   const gameRef = useRef(new Chess());
-  const [fen, setFen] = useState(gameRef.current.fen());
+  const [fen, setFen] = useState<string>(gameRef.current.fen());
 
-  const [pgn, setPgn] = useState("");
+  const [pgn, setPgn] = useState<string>("");
   const [whitePlayerInfo, setWhitePlayerInfo] = useState({
     name: "White",
     elo: "0000",
@@ -67,7 +78,7 @@ const ChessAnalyzer = () => {
     elo: "0000",
   });
   const [currentMoveIndex, setCurrentMoveIndex] = useState(-2);
-  const [lastMadeMove, setLastMadeMove] = useState<object>({});
+  const [lastMadeMove, setLastMadeMove] = useState<Move>();
   const [analyzingState, setAnalyzingState] = useState<number>(1);
   const isPlayingRef = useRef(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -76,10 +87,10 @@ const ChessAnalyzer = () => {
   const [mateIn, setMateIn] = useState(0);
   const [bestMove, setBestMove] = useState("");
   const [boardOrientation, setBoardOrientation] = useState("white");
-  const [history, setHistory] = useState<object[]>([]);
+  const [history, setHistory] = useState<Move[]>([]);
   const isFirstRender = useRef(true);
   const gameAccuracies = useRef<object>({});
-  const analysis = useRef<any[]>([]);
+  const analysis = useRef<AnalysisResult[]>([]);
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const totalTime = useRef<number>(0);
   const verdicts = useRef<string[]>([]);
@@ -88,7 +99,7 @@ const ChessAnalyzer = () => {
   const [chosen, setChosen] = useState("lite");
   const [isOpen, setIsOpen] = useState(false);
   const [infoIsOpen, setInfoIsOpen] = useState(false);
-  const handleEngineChange = (value) => {
+  const handleEngineChange = (value: string) => {
     engine.current = value;
     setChosen(value);
     setIsOpen(false);
@@ -136,8 +147,9 @@ const ChessAnalyzer = () => {
       setEvaluation(0);
       setBestMove("");
       extractPlayerInfo(pgn);
-      // console.log(hist);
+      // console.log("🚀🚀🚀🚀🚀🚀", hist);
     } catch (error) {
+      console.error(error);
       toast.error("Enter a valid PGN.", {
         style: {
           background: "#323130",
@@ -284,7 +296,7 @@ const ChessAnalyzer = () => {
       setBestMove(null);
       setEvaluation(0);
     }
-  }, [fen]);
+  }, [fen, currentMoveIndex, history.length, playSound]);
 
   const customSquareStyles = useMemo(() => {
     const styles: Record<string, React.CSSProperties> = {};
@@ -365,7 +377,7 @@ const ChessAnalyzer = () => {
     }
   }, [currentMoveIndex, history]);
 
-  const moveClick = (fen, moveIndex) => {
+  const moveClick = (fen: string, moveIndex: number) => {
     if (!isPlayingRef.current) {
       gameRef.current.load(fen);
       setCurrentMoveIndex(moveIndex);
@@ -465,18 +477,18 @@ const ChessAnalyzer = () => {
     };
     setWhitePlayerInfo({
       name: getTagValue("White"),
-      elo: parseInt(getTagValue("WhiteElo"), 10),
+      elo: getTagValue("WhiteElo"),
     });
     setBlackPlayerInfo({
       name: getTagValue("Black"),
-      elo: parseInt(getTagValue("BlackElo"), 10),
+      elo: getTagValue("BlackElo"),
     });
   }
 
   const rotateBoard = () => {
     setBoardOrientation(boardOrientation == "white" ? "black" : "white");
   };
-  const boardPlayerData = (player) => {
+  const boardPlayerData = (player: string) => {
     if (player == "white" && boardOrientation == "white")
       return whitePlayerInfo;
     else if (player == "white" && boardOrientation == "black")
@@ -490,7 +502,13 @@ const ChessAnalyzer = () => {
     <div className="">
       <Card className="h-14 items-center p-2.5 m-3 relative rounded-lg ">
         <div className="flex flex-row gap-1 items-center">
-          <img src={`/chessbit.png`} alt="logo" className="h-7" />
+          <Image
+            src="/chessbit.png"
+            alt="logo"
+            width={28}
+            height={28}
+            className="!h-7"
+          />
           <label
             className="text-xl font-bold mt-1 underline"
             onClick={() => (window.location.href = "/")}

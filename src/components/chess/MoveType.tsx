@@ -1,15 +1,23 @@
 import { Card } from "../ui/card";
 import { Star, Check } from "lucide-react";
 
+type verdict = {
+  bestmove: number;
+  goodmove: number;
+  inaccuracy: number;
+  mistake: number;
+  blunder: number;
+};
+
 export default function MoveType({ verdicts }) {
-  const whiteVerdicts: object = {
+  const whiteVerdicts: verdict = {
     bestmove: 0,
     goodmove: 0,
     inaccuracy: 0,
     mistake: 0,
     blunder: 0,
   };
-  const blackVerdicts: object = {
+  const blackVerdicts: verdict = {
     bestmove: 0,
     goodmove: 0,
     inaccuracy: 0,
