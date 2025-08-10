@@ -489,12 +489,15 @@ const ChessAnalyzer = () => {
   return (
     <div className="">
       <Card className="h-14 items-center p-2.5 m-3 relative rounded-lg ">
-        <label
-          className="text-2xl font-bold underline"
-          onClick={() => (window.location.href = "/")}
-        >
-          chessBit
-        </label>
+        <div className="flex flex-row gap-1 items-center">
+          <img src={`/chessbit.png`} alt="logo" className="h-7" />
+          <label
+            className="text-xl font-bold mt-1 underline"
+            onClick={() => (window.location.href = "/")}
+          >
+            chessBit
+          </label>
+        </div>
         <Card
           className="p-2.5 cursor-pointer rounded-md absolute right-1.75 top-1.5 md:left-1.75 md:right-auto flex items-center"
           onClick={() => window.open("https://github.com/monoshivam", "_blank")}
