@@ -8,9 +8,12 @@ import GridPatternBackground from "@/components/GridPatternBackground";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "chessty",
+  title: "chessBit",
   description:
     "A modern, sleek, and intuitive chess analysis platform built for players who want to grow smarter with every move.",
+  icons: {
+    icon: "/favicon.png",
+  },
 };
 
 export default function RootLayout({
