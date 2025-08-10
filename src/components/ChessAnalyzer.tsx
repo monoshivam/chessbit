@@ -28,6 +28,8 @@ import {
   ChevronLast,
   ChevronFirst,
   RefreshCcw,
+  Github,
+  BadgeInfo,
 } from "lucide-react";
 
 import { Card, CardContent } from "./ui/card";
@@ -49,6 +51,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "sonner";
 
 const ChessAnalyzer = () => {
   const gameRef = useRef(new Chess());
@@ -84,6 +87,7 @@ const ChessAnalyzer = () => {
   const engine = useRef<string>("lite");
   const [chosen, setChosen] = useState("lite");
   const [isOpen, setIsOpen] = useState(false);
+  const [infoIsOpen, setInfoIsOpen] = useState(false);
   const handleEngineChange = (value) => {
     engine.current = value;
     setChosen(value);
@@ -134,7 +138,13 @@ const ChessAnalyzer = () => {
       extractPlayerInfo(pgn);
       // console.log(hist);
     } catch (error) {
-      console.error("Error loading PGN:", error);
+      toast.error("Enter a valid PGN.", {
+        style: {
+          background: "#323130",
+          color: "#adadad",
+        },
+        duration: 1800,
+      });
     }
   }, []);
 
@@ -156,6 +166,24 @@ const ChessAnalyzer = () => {
     const runBatchAnalysis = async () => {
       try {
         const positions = history.map((move) => move.before);
+        let tEval = null;
+
+        if (gameRef.current.isCheckmate()) {
+          const winner = gameRef.current.turn() === "w" ? "black" : "white";
+          if (winner == "white") {
+            tEval = { eval: 10, mate: 999, winChance: 100 };
+          } else {
+            tEval = { eval: -10, mate: -999, winChance: 0 };
+          }
+        } else if (
+          gameRef.current.isInsufficientMaterial() ||
+          gameRef.current.isStalemate()
+        ) {
+          tEval = { eval: 0 };
+        } else {
+          const tfen = history[history.length - 1].after;
+          positions.push(tfen);
+        }
 
         const batchResult = await analyzePositions({
           positions: positions,
@@ -190,35 +218,8 @@ const ChessAnalyzer = () => {
         batchResult.results[0].winChance = 50;
         batchResult.results[0].centipawns = 0;
 
-        if (gameRef.current.isCheckmate()) {
-          const winner = gameRef.current.turn() === "w" ? "black" : "white";
-          if (winner == "white") {
-            batchResult.results.push({ eval: 10, mate: 999, winChance: 100 });
-          } else {
-            batchResult.results.push({ eval: -10, mate: -999, winChance: 0 });
-          }
-        } else if (
-          gameRef.current.isInsufficientMaterial() ||
-          gameRef.current.isStalemate()
-        ) {
-          batchResult.results.push({ eval: 0 });
-        } else {
-          const tfen = history[history.length - 1].after;
-          const tPosition: string[] = [tfen];
-          const bResult = await analyzePositions({
-            positions: tPosition,
-            depth: 12,
-            engine: engine.current,
-            onProgress: (completed, total) => {
-              const progress = (completed / total) * 100;
-              setAnalysisProgress(progress);
-              console.log(
-                `Progress: ${completed}/${total} (${progress.toFixed(1)}%)`,
-              );
-            },
-          });
-          const tEvaluation = bResult.results[0];
-          batchResult.results.push(tEvaluation);
+        if (tEval) {
+          batchResult.results.push(tEval);
         }
 
         analysis.current = batchResult.results;
@@ -487,12 +488,55 @@ const ChessAnalyzer = () => {
 
   return (
     <div className="">
-      <Card className="h-16 items-center p-4 m-3">
-        <CardContent>
-          <label className="text-2xl font-bold">chessty</label>
-        </CardContent>
+      <Card className="h-14 items-center p-2.5 m-3 relative rounded-lg ">
+        <label
+          className="text-2xl font-bold underline"
+          onClick={() => (window.location.href = "/")}
+        >
+          chessty
+        </label>
+        <Card
+          className="p-2.5 cursor-pointer rounded-md absolute right-1.75 top-1.5 md:left-1.75 md:right-auto flex items-center"
+          onClick={() => window.open("https://github.com/monoshivam", "_blank")}
+        >
+          <div className="flex gap-1.5">
+            <Github size={20} />
+            <label className="font-bold text-sm hidden md:block cursor-pointer">
+              monoshivam
+            </label>
+          </div>
+        </Card>
+        <div className=" cursor-pointer absolute left-4 top-4.5 md:right-4 md:left-auto">
+          <Dialog open={infoIsOpen} onOpenChange={setInfoIsOpen}>
+            <DialogTrigger asChild>
+              <BadgeInfo size={18} />
+            </DialogTrigger>
+            <DialogContent className="border-2">
+              <DialogHeader>
+                <DialogTitle>Info:</DialogTitle>
+              </DialogHeader>
+              <label className="font-normal text-sm">
+                {`The moves are categorized based on the Lichess logic, with a few
+              parameters modified to get better results.
+              `}
+              </label>
+              <label className="font-normal text-sm">
+                {`The game accuracy stats are different from that of chess.com's,
+                it's also based on the logic that Lichess provides.
+              `}
+              </label>
+              <label className="font-normal text-sm">
+                {`Stockfish-17.1 Full is recommended for use only on desktops.
+              `}
+              </label>
+              <label className="font-normal text-sm">
+                {`Have fun analyzing games!`}
+              </label>
+            </DialogContent>
+          </Dialog>
+        </div>
       </Card>
-      <div className="flex flex-col lg:flex-row gap-5 lg:min-h-[calc(100vh-8rem)]">
+      <div className="flex flex-col lg:flex-row gap-5 lg:min-h-[calc(100vh-7rem)]">
         <div className="hidden lg:block w-[calc(13%)] rounded-xs"></div>
         <div className="mx-1 mt-2 lg:m-3">
           <div className="hidden lg:block h-[calc(8vh)] rounded-xs"></div>
@@ -520,7 +564,7 @@ const ChessAnalyzer = () => {
           <div className="flex ml-9 mt-1.5 lg:mt-2.5 justify-between md:ml-[15vw] md:mr-[15vw] lg:ml-0 lg:mr-0">
             <PlayerBoard playerInfo={boardPlayerData("white")} />
             <Button
-              className="bg-[#323130] hover:bg-[#474944] mr-3 h-9 lg:h-12 lg:w-16 md:h-10 md:w-20 my-auto"
+              className="bg-[#323130] hover:bg-[#474944] mr-3 h-9 lg:h-12 lg:w-16 md:h-10 md:w-20 my-auto border-1"
               size="lg"
               onClick={rotateBoard}
             >
@@ -552,7 +596,7 @@ const ChessAnalyzer = () => {
                         <DialogHeader>
                           <DialogTitle>Select Stockfish Version</DialogTitle>
                           <DialogDescription>
-                            Recommended: Stockfish-17-Lite
+                            The full version may pose errors on mobile devices.
                           </DialogDescription>
                         </DialogHeader>
                         <div className="grid gap-4">
@@ -661,7 +705,7 @@ const ChessAnalyzer = () => {
 
           <div id="spacer" className="h-16 lg:h-0"></div>
           <Card
-            className={`flex flex-row p-1.5 gap-1 fixed bottom-0 w-full rounded-b-none lg:absolute lg:rounded-sm ${analyzingState != 3 ? "pointer-events-none" : ""}`}
+            className={`flex flex-row p-1.5 gap-1 fixed bottom-0 w-full rounded-b-none lg:absolute lg:rounded-sm ${analyzingState < 3 ? "pointer-events-none" : ""}`}
           >
             <Button
               className="bg-[#323130] hover:bg-[#474944] flex-1"

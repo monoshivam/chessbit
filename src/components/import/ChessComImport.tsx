@@ -1,6 +1,5 @@
 import { useState, useCallback, useRef } from "react";
 import { Button } from "../ui/button";
-import { Card } from "../ui/card";
 import { ScrollArea } from "../ui/scroll-area";
 
 const monthMap = {
@@ -30,7 +29,7 @@ export default function ChessComInterface({
   const isDisabled = inputValue.trim() === "";
 
   const fetchData = async () => {
-    username.current = inputValue;
+    username.current = inputValue.trim();
 
     const currentDate = new Date();
     const dateArray = [

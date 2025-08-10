@@ -4,12 +4,17 @@ export default function GridPatternBackground() {
       aria-hidden="true"
       style={{
         visibility: "visible",
-        maskImage: "linear-gradient(to top, #ffffffad, transparent)",
+        maskImage:
+          "linear-gradient(to bottom, #ffffffad 90%, transparent 100%)",
         opacity: 0.3,
+        backgroundColor: "#323130",
       }}
-      className="pointer-events-none absolute inset-0 -z-10 w-full h-full fill-blue-500/50 stroke-blue-500/50"
+      className="pointer-events-none absolute inset-0 -z-10 w-full h-full fill-green-500/50 stroke-green-500/50"
     >
       <defs>
+        <filter id="blur" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="2" />
+        </filter>
         <pattern
           id="grid-pattern"
           width="20"
@@ -26,6 +31,7 @@ export default function GridPatternBackground() {
         height="100%"
         strokeWidth="0"
         fill="url(#grid-pattern)"
+        filter="url(#blur)"
       />
     </svg>
   );

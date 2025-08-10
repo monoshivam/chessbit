@@ -14,7 +14,7 @@ export default function PGNImport({
   return (
     <div className="grid grid-rows-[1fr_auto] gap-2 w-full h-full">
       <Textarea
-        className="resize-none font-bold h-22 lg:h-full"
+        className="lg:!bg-[#1c1917]/55 !bg-[#1c1917]/40 resize-none font-bold h-22 lg:h-full"
         value={pgn}
         onChange={(e) => setPgn(e.target.value)}
         placeholder="Enter your PGN here..."

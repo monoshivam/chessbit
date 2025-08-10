@@ -27,7 +27,7 @@ function EvalGraph({
 
     const sw = index - 1 == currMoveIndex ? 2 : 0;
 
-    const color =
+    let color =
       verdicts[index - 1] == "blunder"
         ? "#fa412d"
         : verdicts[index - 1] == "mistake"
@@ -36,33 +36,49 @@ function EvalGraph({
             ? "#56b4e9"
             : "#000000";
 
-    let dispRad;
+    let dispRadX;
+    let dispRadY;
 
-    if (index == 0 || index == analysisData.length - 1) {
-      dispRad = 0;
+    if (index == 0) {
+      dispRadX = 0;
+      dispRadY = 0;
     } else if (!orien && (index - 1) % 2 == 0) {
       if (
         verdicts[index - 1] == "blunder" ||
         verdicts[index - 1] == "mistake" ||
         verdicts[index - 1] == "inaccuracy"
       ) {
-        dispRad = 5;
-      } else dispRad = 0;
+        dispRadX = 5;
+        dispRadY = 5;
+      } else {
+        dispRadX = 0;
+        dispRadY = 0;
+      }
     } else if (orien && (index - 1) % 2 != 0) {
       if (
         verdicts[index - 1] == "blunder" ||
         verdicts[index - 1] == "mistake" ||
         verdicts[index - 1] == "inaccuracy"
       ) {
-        dispRad = 5;
-      } else dispRad = 0;
+        dispRadX = 5;
+        dispRadY = 5;
+      } else {
+        dispRadX = 0;
+        dispRadY = 0;
+      }
+    }
+    if (currMoveIndex == index - 1) {
+      dispRadX = 0.5;
+      dispRadY = 100;
+      color = "white";
     }
 
     return (
-      <circle
+      <ellipse
         cx={cx}
         cy={cy}
-        r={dispRad}
+        rx={dispRadX}
+        ry={dispRadY}
         fill={color}
         stroke="#1c1917"
         strokeWidth={sw}

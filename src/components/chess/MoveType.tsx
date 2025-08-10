@@ -27,7 +27,7 @@ export default function MoveType({ verdicts }) {
   // console.log(blackVerdicts);
 
   return (
-    <Card className="p-0 w-full">
+    <Card className="p-0 w-full rounded-md">
       <div className="flex flex-col px-5 pr-2 py-3">
         <div className="grid grid-cols-[1fr_3ch_auto_3ch] gap-2">
           <p className="font-medium">Bestmove</p>

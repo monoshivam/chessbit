@@ -44,7 +44,12 @@ const analyzePosition = async (
       const message = e.data;
       // console.log(message);
 
-      if (message.data.startsWith("info depth")) {
+      if (message.data && message.data == "readyok") {
+        worker.postMessage(`position fen ${fen}`);
+        worker.postMessage(`go depth ${depth}`);
+      }
+
+      if (message.data && message.data.startsWith(`info depth ${depth}`)) {
         const cpMatch = message.data.match(/cp (-?\d+)/);
         const mateMatch = message.data.match(/mate (-?\d+)/);
         const multipvMatch = message.data.match(/multipv (\d+)/);
@@ -86,15 +91,15 @@ const analyzePosition = async (
           }
         }
       }
-      if (message.data.startsWith(`info depth ${depth}`)) {
+      if (message.data && message.data.startsWith(`bestmove`)) {
         resolve(result);
       }
     };
     worker.onerror = (error) => {
       reject(new Error(`Stockfish analysis error: ${error.message}`));
     };
-    worker.postMessage(`position fen ${fen}`);
-    worker.postMessage(`go depth ${depth}`);
+
+    worker.postMessage(`isready`);
   });
 };
 
@@ -108,18 +113,17 @@ const initializeWorker = async (
       const message = e.data;
       console.log(message);
 
-      if (message.type === "ready") {
-        console.log("Engine Loaded");
+      if (
+        message.data ==
+        "Stockfish 17.1 by the Stockfish developers (see AUTHORS file)"
+      ) {
         worker.postMessage("uci");
-        worker.postMessage("isready");
+      } else if (message.type === "ready") {
+        console.log("Engine Loaded");
       } else if (message.data === "uciok") {
-        console.log("uciok");
-      } else if (message.data === "readyok") {
         worker.postMessage(`setoption name Threads value ${threads}`);
         worker.postMessage(`setoption name MultiPv value ${variants}`);
-        worker.postMessage(`ucinewgame`);
         console.log("stockfish options configured");
-        worker.postMessage(`isready`);
         resolve();
       }
     };
@@ -155,14 +159,14 @@ const analyzeLitePosition = async (
 
     worker.onmessage = (e) => {
       const message = e.data;
-      // console.log(message);
+      console.log(message);
 
       if (message.startsWith("readyok")) {
         worker.postMessage(`position fen ${fen}`);
         worker.postMessage(`go depth ${depth}`);
       }
 
-      if (message.startsWith("info depth")) {
+      if (message.startsWith(`info depth ${depth}`)) {
         const cpMatch = message.match(/cp (-?\d+)/);
         const mateMatch = message.match(/mate (-?\d+)/);
         const multipvMatch = message.match(/multipv (\d+)/);
@@ -205,7 +209,7 @@ const analyzeLitePosition = async (
           }
         }
       }
-      if (message.startsWith(`info depth ${depth}`)) {
+      if (message.startsWith(`bestmove`)) {
         resolve(result);
       }
     };
@@ -226,11 +230,16 @@ const initializeLiteWorker = async (
     worker.onmessage = (e) => {
       const message = e.data;
       console.log(message);
+      if (
+        message ==
+        "Stockfish 17 Lite WASM Multithreaded by the Stockfish developers (see AUTHORS file)"
+      ) {
+        worker.postMessage("uci");
+      }
 
       if (message == "uciok") {
         worker.postMessage(`setoption name Threads value ${threads}`);
         worker.postMessage(`setoption name MultiPv value ${variants}`);
-        worker.postMessage(`ucinewgame`);
         console.log("stockfish options configured");
         resolve();
       }
@@ -240,8 +249,6 @@ const initializeLiteWorker = async (
       console.log(error);
       reject(new Error(`Worker initialization error: ${error}`));
     };
-
-    worker.postMessage("uci");
   });
 };
 
@@ -251,7 +258,7 @@ export const analyzePositions = async (
   const {
     positions,
     variants = 1,
-    threads = navigator.hardwareConcurrency,
+    threads = navigator.hardwareConcurrency / 2,
     depth = 12,
     onProgress,
     engine = "lite",
