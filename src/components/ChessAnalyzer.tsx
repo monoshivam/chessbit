@@ -65,6 +65,25 @@ type AnalysisResult = {
 };
 
 const ChessAnalyzer = () => {
+  useEffect(() => {
+    const imageUrls = [
+      "/moveTypes/bestmove.png",
+      "/moveTypes/blunder.png",
+      "/moveTypes/goodmove.png",
+      "/moveTypes/inaccuracy.png",
+      "/moveTypes/mistake.png",
+    ];
+
+    fetch("/stockfish/stockfish-17-lite.wasm").then((response) =>
+      response.arrayBuffer(),
+    );
+
+    imageUrls.forEach((url) => {
+      const img = document.createElement("img");
+      img.src = url;
+    });
+  }, []);
+
   const gameRef = useRef(new Chess());
   const [fen, setFen] = useState<string>(gameRef.current.fen());
 
@@ -143,6 +162,7 @@ const ChessAnalyzer = () => {
       const hist = gameRef.current.history({ verbose: true });
       setHistory(hist);
       setCurrentMoveIndex(hist.length - 1);
+      currentMoveIndexRef.current = hist.length - 1;
       setLastMadeMove(hist[hist.length - 1]);
       setEvaluation(0);
       setBestMove("");
@@ -424,7 +444,7 @@ const ChessAnalyzer = () => {
   const playNextMove = useCallback(() => {
     if (
       !isPlayingRef.current ||
-      currentMoveIndexRef.current >= history.length
+      currentMoveIndexRef.current < history.length - 1
     ) {
       isPlayingRef.current = false;
       setIsPlaying(false);
@@ -456,7 +476,7 @@ const ChessAnalyzer = () => {
   const playMove = useCallback(() => {
     if (
       !isPlayingRef.current &&
-      currentMoveIndex < history.length - 1 &&
+      currentMoveIndexRef.current < history.length - 1 &&
       history.length > 0
     ) {
       setIsPlaying(true);
