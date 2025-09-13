@@ -72,6 +72,9 @@ const ChessAnalyzer = () => {
       "/moveTypes/goodmove.png",
       "/moveTypes/inaccuracy.png",
       "/moveTypes/mistake.png",
+      "/gameStats/win.png",
+      "/gameStats/loss.png",
+      "/gameStats/draw.png",
     ];
 
     fetch("/stockfish/stockfish-17-lite.wasm").then((response) =>
