@@ -594,7 +594,7 @@ const ChessAnalyzer = () => {
         </div>
       </Card>
       <div className="flex flex-col lg:flex-row gap-5 lg:min-h-[calc(100vh-7rem)]">
-        <div className="hidden lg:block w-[calc(13%)] rounded-xs"></div>
+        <div className="hidden lg:block w-[calc(16%)] rounded-xs"></div>
         <div className="mx-1 mt-2 lg:m-3">
           <div className="hidden lg:block h-[calc(8vh)] rounded-xs"></div>
           <div className="ml-9 mb-1.5 lg:mb-2.5 md:ml-[15vw] md:mr-[15vw] lg:ml-0 lg:mr-0">
@@ -805,7 +805,7 @@ const ChessAnalyzer = () => {
             </Button>
           </Card>
         </div>
-        <div className="hidden lg:block w-[calc(14%)]"></div>
+        <div className="hidden lg:block w-[calc(16%)]"></div>
       </div>
     </div>
   );
