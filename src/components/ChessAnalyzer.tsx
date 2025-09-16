@@ -77,6 +77,16 @@ const ChessAnalyzer = () => {
       "/gameStats/draw.png",
     ];
 
+    const audioUrls = [
+      "/sounds/move.mp3",
+      "/sounds/capture.mp3",
+      "/sounds/castle.mp3",
+      "/sounds/game-end.mp3",
+      "/sounds/check.mp3",
+      "/sounds/game-start.mp3",
+      "/sounds/promote.mp3",
+    ];
+
     fetch("/stockfish/stockfish-17-lite.wasm").then((response) =>
       response.arrayBuffer(),
     );
@@ -84,6 +94,10 @@ const ChessAnalyzer = () => {
     imageUrls.forEach((url) => {
       const img = document.createElement("img");
       img.src = url;
+    });
+
+    audioUrls.forEach((url) => {
+      fetch(url).then((response) => response.arrayBuffer());
     });
   }, []);
 
@@ -523,7 +537,7 @@ const ChessAnalyzer = () => {
   return (
     <div className="">
       <Card className="h-14 items-center p-2.5 m-3 relative rounded-lg ">
-        <div className="flex flex-row gap-1 items-center">
+        <div className="select-none flex flex-row gap-1 items-center">
           <Image
             src="/chessbit.png"
             alt="logo"

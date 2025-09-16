@@ -13,7 +13,7 @@ export default function EvalBar({ eval: evaluation, mateIn, orientation }) {
 
   return (
     <div
-      className={`relative w-5 h-full rounded-sm overflow-hidden border border-gray-600 bg-gray-800 flex ${orientation == "white" ? "flex-col-reverse" : "flex-col"}`}
+      className={`select-none relative w-5 h-full rounded-sm overflow-hidden border border-gray-600 bg-gray-800 flex ${orientation == "white" ? "flex-col-reverse" : "flex-col"}`}
     >
       <div
         className="bg-white transition-all duration-300"

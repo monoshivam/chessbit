@@ -32,16 +32,8 @@ export default function ChessComInterface({
   const fetchData = async () => {
     username.current = inputValue.trim();
 
-    const currentDate = new Date();
-    const dateArray = [
-      currentDate.getFullYear(),
-      (currentDate.getMonth() + 1).toString().padStart(2, "0"),
-      currentDate.getDate().toString().padStart(2, "0"),
-    ];
-
-    console.log(username.current);
     const res = await fetch(
-      `https://api.chess.com/pub/player/${username.current}/games/${dateArray[0]}/${dateArray[1]}`,
+      `https://api.chess.com/pub/player/${username.current}/games/archives`,
       {
         method: "GET",
       },
@@ -49,9 +41,31 @@ export default function ChessComInterface({
     // if (!res.ok) {
     //   throw new Error(`API error! status: ${res.status}`);
     // }
-    const tempUserInfo = await res.json();
-    setUserInfo(tempUserInfo);
-    console.log(tempUserInfo);
+    const tempUserArchives = await res.json();
+
+    // console.log(tempUserArchives);
+
+    if (tempUserArchives.code == 0) {
+      setUserInfo({
+        code: 0,
+      });
+    } else if (tempUserArchives?.archives.length == 0) {
+      setUserInfo({
+        code: 1,
+      });
+    } else {
+      const finalUrl =
+        tempUserArchives.archives[tempUserArchives.archives.length - 1];
+
+      const resFinal = await fetch(`${finalUrl}`, {
+        method: "GET",
+      });
+
+      const tempUserInfo = await resFinal.json();
+
+      setUserInfo(tempUserInfo);
+      // console.log(tempUserInfo);
+    }
   };
 
   const renderGameData = useCallback(() => {
@@ -94,7 +108,7 @@ export default function ChessComInterface({
               ? "loss"
               : "draw";
       }
-      console.log(gameEndState);
+      // console.log(gameEndState);
 
       games.push(
         <div
@@ -144,7 +158,7 @@ export default function ChessComInterface({
           className={
             isDisabled
               ? "opacity-50 cursor-not-allowed bg-lime-500 font-bold"
-              : "bg-lime-500 font-bold hover:bg-lime-400"
+              : "bg-lime-500 font-bold hover:bg-lime-600 hover:border-4"
           }
           onClick={fetchData}
         >
@@ -155,9 +169,13 @@ export default function ChessComInterface({
         className={`${userInfo && userInfo.code != 0 ? "h-[calc(30vh)] lg:h-[calc(100vh-35.5rem)]" : ""} px-2 py-2 rounded-md bg-[#1c1917] border-1`}
       >
         {!userInfo ? (
-          <label>Search the username!</label>
+          <label className="select-none w-full mx-auto flex flex-row justify-center font-medium text-neutral-100 text-sm">
+            Search the username!
+          </label>
+        ) : userInfo.code == 1 ? (
+          <label className="select-none w-full mx-auto flex flex-row justify-center font-medium text-neutral-100 text-sm">{`No games to show!`}</label>
         ) : userInfo.code == 0 ? (
-          <label className="w-full mx-auto">{`User ${username.current} not found!`}</label>
+          <label className="select-none w-full mx-auto flex flex-row justify-center font-medium text-neutral-100 text-sm">{`User ${username.current} not found!`}</label>
         ) : (
           renderGameData()
         )}
