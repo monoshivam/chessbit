@@ -205,6 +205,19 @@ const ChessAnalyzer = () => {
     return firstNumberMatch ? parseInt(firstNumberMatch[0], 10) : null;
   }
 
+  const firstMove = useCallback(() => {
+    if (isPlayingRef.current) {
+      isPlayingRef.current = false;
+      setIsPlaying(false);
+      currentMoveIndexRef.current = -1;
+    }
+
+    setCurrentMoveIndex(-1);
+    gameRef.current = new Chess();
+    setFen(gameRef.current.fen());
+    setLastMadeMove(null);
+  }, []);
+
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false; // Skip the first run
@@ -297,13 +310,14 @@ const ChessAnalyzer = () => {
 
         if (batchResult.completed === positions.length) {
           setAnalyzingState(3);
+          firstMove();
         }
       } catch (error) {
         console.error("Batch analysis error:", error);
       }
     };
     runBatchAnalysis();
-  }, [history]);
+  }, [history, firstMove]);
 
   useEffect(() => {
     if (
@@ -431,19 +445,6 @@ const ChessAnalyzer = () => {
       setLastMadeMove(history[currentMoveIndex - 1] || null);
     }
   }, [currentMoveIndex, history]);
-
-  const firstMove = useCallback(() => {
-    if (isPlayingRef.current) {
-      isPlayingRef.current = false;
-      setIsPlaying(false);
-      currentMoveIndexRef.current = -1;
-    }
-
-    setCurrentMoveIndex(-1);
-    gameRef.current = new Chess();
-    setFen(gameRef.current.fen());
-    setLastMadeMove(null);
-  }, []);
 
   const lastMove = useCallback(() => {
     if (isPlayingRef.current) {
