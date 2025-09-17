@@ -15,6 +15,8 @@ chessBit is a powerful, modern, sleek, and intuitive chess analysis platform bui
 
 - **Next.js 15:** chessBit is built using the Next.js framework, which provides a seamless and efficient development experience for creating modern web applications.
 
+- **WebWorkers (Stockfish):** chessBit is utilizing WebWorkers to run Stockfish natively with multiple threads working to deliver a quick analyzation of chess games.
+
 - **Tailwind CSS:** The user interface of chessBit is designed using Tailwind CSS, a highly customizable CSS framework that enables rapid and responsive UI development.
 
 - **TypeScript:** chessBit is developed using TypeScript, a statically typed superset of JavaScript that enhances code quality, maintainability, and developer productivity.
