@@ -9,9 +9,9 @@ function PlayerBoard({ playerInfo }) {
         alt="User"
         width={32}
         height={32}
-        className="h-9 aspect-square w-full lg:h-14 md:h-12 rounded-sm overflow-hidden object-cover"
+        className="h-9 w-auto lg:h-14 md:h-12 rounded-sm overflow-hidden"
       />
-      <div className="grid grid-rows-[auto_1fr] ">
+      <div className="grid grid-rows-[auto_1fr] w-full">
         <label className="text-[12px] lg:text-[18px] md:text-[15px] font-bold">
           {playerInfo.name}
         </label>

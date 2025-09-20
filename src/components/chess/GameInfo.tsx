@@ -24,7 +24,7 @@ function GameInfo({ accuracies, whitePlayerInfo, blackPlayerInfo, time }) {
           alt="User"
           width={56}
           height={56}
-          className="w-full h-11 lg:h-14 md:h-12 rounded-sm overflow-hidden object-cover"
+          className="w-auto h-11 lg:h-14 md:h-12 rounded-sm overflow-hidden"
         />
         <div className="flex flex-col gap-1 justify-around">
           <label className="font-bold text-xs lg:text-sm">{wn}</label>
