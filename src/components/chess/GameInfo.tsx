@@ -49,15 +49,13 @@ function GameInfo({ accuracies, whitePlayerInfo, blackPlayerInfo, time }) {
             {accuracies.black}%
           </label>
         </div>
-        <div className="h-11 lg:h-14 md:h-12 rounded-sm overflow-hidden">
-          <Image
-            src="/user-image.svg"
-            alt="User"
-            width={56}
-            height={56}
-            className="w-full h-full object-cover"
-          />
-        </div>
+        <Image
+          src="/user-image.svg"
+          alt="User"
+          width={56}
+          height={56}
+          className="w-auto h-11 lg:h-14 md:h-12 rounded-sm overflow-hidden"
+        />
       </div>
     </Card>
   );
