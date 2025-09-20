@@ -19,15 +19,13 @@ function GameInfo({ accuracies, whitePlayerInfo, blackPlayerInfo, time }) {
   return (
     <Card className="flex flex-row items-center justify-between md:justify-around p-1.5 rounded-sm ">
       <div className="flex gap-1.5">
-        <div className="h-11 lg:h-14 md:h-12 rounded-sm overflow-hidden">
-          <Image
-            src="/user-image.svg"
-            alt="User"
-            width={56}
-            height={56}
-            className="w-full h-full object-cover"
-          />
-        </div>
+        <Image
+          src="/user-image.svg"
+          alt="User"
+          width={56}
+          height={56}
+          className="w-full h-11 lg:h-14 md:h-12 rounded-sm overflow-hidden object-cover"
+        />
         <div className="flex flex-col gap-1 justify-around">
           <label className="font-bold text-xs lg:text-sm">{wn}</label>
           <label className="bg-white border-1 border-black font-bold text-black text-[0.75rem] lg:text-[1rem] mr-auto px-2 py-0.5 rounded-sm">
